@@ -3,7 +3,7 @@ import http, { type IncomingMessage, type ServerResponse } from 'node:http'
 import https from 'node:https'
 import type { Duplex } from 'node:stream'
 import zlib from 'node:zlib'
-import { injectHtml, relaxCsp, rewriteSetCookie, stripCookie } from './inject'
+import { embedFrameAncestors, ensureEmbedFrameAncestors, injectHtml, relaxCsp, rewriteSetCookie, stripCookie } from './inject'
 import { log } from './log'
 import { privateHost } from './review'
 
@@ -16,6 +16,8 @@ export interface ProxyOptions {
   keepHost?: boolean
   /** Scheme browsers use to reach the app port. */
   scheme?: 'http' | 'https'
+  /** Origins allowed to frame the proxied page (--embed-origin). */
+  embedOrigins?: readonly string[]
 }
 
 const HOP_HEADERS = new Set([
@@ -94,6 +96,7 @@ function decompress(body: Buffer, encoding: string): Buffer | null {
 export function createProxy(opts: ProxyOptions) {
   const { target } = opts
   const scheme = opts.scheme ?? 'http'
+  const embedOrigins = opts.embedOrigins ?? []
   const appOrigin = (req: IncomingMessage) => `${scheme}://${req.headers.host}`
   const secure = target.protocol === 'https:'
   const agent = secure ? new https.Agent({ keepAlive: true }) : new http.Agent({ keepAlive: true })
@@ -146,7 +149,13 @@ export function createProxy(opts: ProxyOptions) {
       if (k === 'set-cookie') out[k] = (v as string[]).map((c) => rewriteSetCookie(c, scheme === 'http' && (secure || relay?.protocol === 'https:')))
       else if (k === 'location') out[k] = rewriteLocation(String(v), req, relay)
       else if (k === 'strict-transport-security') continue
+      else if (k === 'x-frame-options' && embedOrigins.length) continue
       else out[k] = v
+    }
+    if (embedOrigins.length) {
+      const csp = out['content-security-policy']
+      if (typeof csp === 'string') out['content-security-policy'] = ensureEmbedFrameAncestors(csp, embedOrigins)
+      else if (csp === undefined) out['content-security-policy'] = embedFrameAncestors(embedOrigins)
     }
     if (html) {
       delete out['content-length']
@@ -164,7 +173,7 @@ export function createProxy(opts: ProxyOptions) {
         `<p>The target is not reachable yet (${escapeHtml(err.message)}). This page retries automatically. ` +
         `You can still open the chat to ask the agent to start it.</p>` +
         `<script>setTimeout(function(){location.reload()},2500)</script></body></html>`,
-      { controlOrigin: opts.controlOrigin(req) },
+      { controlOrigin: opts.controlOrigin(req), embedOrigins },
     )
     if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' })
     res.end(body)
@@ -242,7 +251,7 @@ export function createProxy(opts: ProxyOptions) {
           for (const h of ['content-security-policy', 'content-security-policy-report-only']) {
             const v = headers[h]
             if (typeof v !== 'string') continue
-            const r = relaxCsp(v, controlOrigin)
+            const r = relaxCsp(v, controlOrigin, embedOrigins)
             headers[h] = r.csp
             nonce = nonce ?? r.nonce
             if (r.warning && !warned.has(r.warning)) {
@@ -253,7 +262,7 @@ export function createProxy(opts: ProxyOptions) {
           // latin1 round-trips arbitrary bytes, so non-UTF-8 pages survive untouched.
           let html = body.toString('latin1')
           html = html.split(target.origin).join(appOrigin(req))
-          html = injectHtml(html, { nonce, controlOrigin })
+          html = injectHtml(html, { nonce, controlOrigin, embedOrigins })
           const out = Buffer.from(html, 'latin1')
           headers['content-length'] = String(out.length)
           res.writeHead(up.statusCode ?? 200, up.statusMessage, headers)

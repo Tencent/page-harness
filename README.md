@@ -164,6 +164,8 @@ npx page-harness https://example.com --share
 
 Send the Share link (also in Settings → Team) to teammates on the same network. Opening it gives them a reviewer session for that browser; they enter a display name once and then see the page with everyone's notes and changes in real time. Reviewers can comment, edit (review mode), reply, resolve and approve. They cannot run or see the agent, chats, history, uploads or page control. Other machines without the link get `403`.
 
+Teammates need both ports: the app port and the control port. On a cloud machine, open both ports and pass `--public-host <public IP or domain>` so the invite link points there. To start a share preview from DeepSeek Harness, see [`dsh-plugin/`](./dsh-plugin/README.md).
+
 ## Features
 
 | Area | Highlights |
@@ -225,6 +227,9 @@ page-harness [frontend-url] [options]
                          The dock is Pick and Notes. Implied when no URL is given.
   --lang <zh|en>         Home page and dock language. Omit it and each browser keeps its own.
   --share                Let teammates on your network join as reviewers (listens on 0.0.0.0)
+  --public-host <name>   Hostname or IP teammates use; goes into the invite link and the Host allow-list
+  --json                 Print one JSON line with the URLs to stdout once listening
+  --embed-origin <origin>  Let this origin frame the page and panels; Pick quotes are posted to it (repeatable)
   --verbose / --quiet
 ```
 

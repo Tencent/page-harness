@@ -34,11 +34,35 @@ function addSource(values: string[], source: string): string[] {
   return out
 }
 
+/** CSP directive that lets only this page and the configured embedders frame the response. */
+export function embedFrameAncestors(embedOrigins: readonly string[]): string {
+  return `frame-ancestors 'self' ${embedOrigins.join(' ')}`
+}
+
+function setFrameAncestors(dirs: Array<[string, string[]]>, embedOrigins: readonly string[]) {
+  const fa = dirs.find(([n]) => n === 'frame-ancestors')
+  if (embedOrigins.length) {
+    const sources = ["'self'", ...embedOrigins]
+    if (fa) fa[1] = sources
+    else dirs.push(['frame-ancestors', sources])
+    return
+  }
+  if (fa) fa[1] = addSource(fa[1], "'self'")
+}
+
+/** Replaces frame-ancestors with the embed allow-list. Other directives stay as they are. */
+export function ensureEmbedFrameAncestors(csp: string, embedOrigins: readonly string[]): string {
+  if (!embedOrigins.length) return csp
+  const dirs = parse(csp)
+  setFrameAncestors(dirs, embedOrigins)
+  return serialize(dirs)
+}
+
 /**
  * Lets our overlay script load and our panel iframe embed under the page's CSP.
  * `controlOrigin` is the origin serving the panel iframe.
  */
-export function relaxCsp(csp: string, controlOrigin: string): CspResult {
+export function relaxCsp(csp: string, controlOrigin: string, embedOrigins: readonly string[] = []): CspResult {
   const dirs = parse(csp)
   const get = (name: string) => dirs.find(([n]) => n === name)
   const defaults = get('default-src')?.[1]
@@ -72,8 +96,7 @@ export function relaxCsp(csp: string, controlOrigin: string): CspResult {
   }
   if (!framed && defaults) dirs.push(['frame-src', addSource([...defaults], controlOrigin)])
 
-  const fa = get('frame-ancestors')
-  if (fa) fa[1] = addSource(fa[1], "'self'")
+  setFrameAncestors(dirs, embedOrigins)
 
   return { csp: serialize(dirs), nonce, warning }
 }
@@ -90,12 +113,12 @@ export function scriptTag(nonce?: string): string {
 const META_CSP = /<meta\b[^>]*http-equiv\s*=\s*["']?content-security-policy["']?[^>]*>/gi
 
 /** Rewrites <meta http-equiv="Content-Security-Policy"> tags the same way as the header. */
-function relaxMetaCsp(html: string, controlOrigin: string): { html: string; nonce?: string } {
+function relaxMetaCsp(html: string, controlOrigin: string, embedOrigins: readonly string[]): { html: string; nonce?: string } {
   let nonce: string | undefined
   const out = html.replace(META_CSP, (tag) => {
     const m = /content\s*=\s*(["'])([\s\S]*?)\1/i.exec(tag)
     if (!m) return tag
-    const r = relaxCsp(m[2].replace(/&quot;/g, '"').replace(/&#39;/g, "'"), controlOrigin)
+    const r = relaxCsp(m[2].replace(/&quot;/g, '"').replace(/&#39;/g, "'"), controlOrigin, embedOrigins)
     nonce = nonce ?? r.nonce
     return tag.replace(m[0], `content="${escapeAttr(r.csp)}"`)
   })
@@ -106,9 +129,9 @@ function relaxMetaCsp(html: string, controlOrigin: string): { html: string; nonc
  * Inserts the overlay script as the very first thing in <head>, so its message
  * listener is registered before any page script runs.
  */
-export function injectHtml(html: string, opts: { nonce?: string; controlOrigin: string }): string {
+export function injectHtml(html: string, opts: { nonce?: string; controlOrigin: string; embedOrigins?: readonly string[] }): string {
   if (html.includes('data-page-harness')) return html
-  const meta = relaxMetaCsp(html, opts.controlOrigin)
+  const meta = relaxMetaCsp(html, opts.controlOrigin, opts.embedOrigins ?? [])
   html = meta.html
   const tag = scriptTag(opts.nonce ?? meta.nonce)
   const head = /<head\b[^>]*>/i.exec(html)

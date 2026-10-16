@@ -20,7 +20,7 @@ ${tokensCss('.ph', '.ph[data-theme="dark"]')}
 .bar button.on, .bar button.on:hover:not(:disabled) { background: var(--accent); color: var(--accent-fg); }
 .bar svg { width: 16px; height: 16px; flex: none; }
 .bar button[data-tip]:disabled:hover::after, .bar button[data-tip].tip::after {
-  content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); right: 0; padding: 4px 8px; border-radius: var(--r-sm); background: var(--fg); color: var(--bg); font-size: var(--fs-sm); white-space: nowrap; pointer-events: none;
+  content: attr(data-tip); position: absolute; top: 50%; right: calc(100% + 8px); transform: translateY(-50%); padding: 4px 8px; border-radius: var(--r-sm); background: var(--fg); color: var(--bg); font-size: var(--fs-sm); white-space: nowrap; pointer-events: none;
 }
 .toast { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: var(--r); font-size: var(--fs-sm); border: 1px solid transparent; box-shadow: var(--shadow-sm); max-width: 100%; }
 .toast.ok { background: var(--ok-bg); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 25%, transparent); }

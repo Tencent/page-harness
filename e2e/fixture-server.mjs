@@ -37,12 +37,15 @@ http
     const reviewProject = path.join(here, '.tmp', 'review-project')
     const bookmarkletProject = path.join(here, '.tmp', 'bookmarklet-project')
     const noAgentProject = path.join(here, '.tmp', 'noagent-project')
+    const embedProject = path.join(here, '.tmp', 'embed-project')
     mkdirSync(reviewProject, { recursive: true })
     mkdirSync(bookmarkletProject, { recursive: true })
     mkdirSync(noAgentProject, { recursive: true })
+    mkdirSync(embedProject, { recursive: true })
     const reviewPort = Number(process.env.REVIEW_PORT ?? appPort + 4)
     const noAgentPort = Number(process.env.NOAGENT_PORT ?? appPort + 6)
     const bookmarkletPort = Number(process.env.BOOKMARKLET_PORT ?? appPort + 8)
+    const embedPort = Number(process.env.EMBED_PORT ?? appPort + 10)
     const cli = path.join(here, '..', 'dist', 'cli.js')
     const harness = (dir, p, extra = []) =>
       spawn(process.execPath, [cli, `http://127.0.0.1:${port}`, '--project', dir, '--agent', 'fake', '--port', String(p), '--control-port', String(p + 1), ...extra], {
@@ -55,6 +58,15 @@ http
       harness(reviewProject, reviewPort, ['--review', '--share', '--host', '127.0.0.1']),
       bare(['--project', bookmarkletProject, '--control-port', String(bookmarkletPort), '--host', '127.0.0.1']),
       bare([`http://127.0.0.1:${port}`, '--project', noAgentProject, '--no-agent', '--port', String(noAgentPort), '--control-port', String(noAgentPort + 1), '--host', '127.0.0.1']),
+      bare([
+        `http://127.0.0.1:${port}`,
+        '--project', embedProject,
+        '--no-agent',
+        '--port', String(embedPort),
+        '--control-port', String(embedPort + 1),
+        '--host', '127.0.0.1',
+        '--embed-origin', `http://localhost:${appPort}`,
+      ]),
     ]
     const stop = () => clis.forEach((c) => c.kill('SIGTERM'))
     process.on('SIGTERM', () => (stop(), process.exit(0)))

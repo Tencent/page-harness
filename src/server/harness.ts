@@ -36,6 +36,10 @@ export interface HarnessOptions {
   share?: boolean
   /** Scheme browsers use to reach both ports, "https" behind a TLS-terminating load balancer. */
   publicScheme?: PublicScheme
+  /** Hostname teammates use to reach this machine (public IP or domain). Goes into the invite link and the Host allow-list. */
+  publicHost?: string
+  /** Origins allowed to frame the app page, e.g. an IDE preview pane. Quoted elements are posted to them. */
+  embedOrigins?: string[]
   /** Pick and Notes only. Do not detect or start an agent CLI. Implied when there is no target. */
   noAgent?: boolean
   /** Home page and dock language. Omitted: the browser language, as before. */
@@ -53,6 +57,8 @@ export interface Harness {
   /** No frontend URL: the control port serves the home page and the bookmarklet. */
   bookmarklet: boolean
   noAgent: boolean
+  /** Set when a non-shared embed preview listens beyond loopback. Absent from human-readable logs. */
+  embedToken?: string
   /** Secret the bookmarklet sends so other websites cannot call the review API. */
   bookmarkletToken: string
   gateway: Gateway
@@ -90,7 +96,10 @@ export async function startHarness(o: HarnessOptions): Promise<Harness> {
   }
 
   const team = new Team(dataDir, !!o.share)
-  const auth = new Auth({ host: o.host, appPort: o.appPort ?? 0, controlPort: o.controlPort, extraHosts: o.allowHosts, team, publicScheme: o.publicScheme })
+  const wide = o.host === '0.0.0.0' || o.host === '::'
+  const embedToken = o.embedOrigins?.length && !o.share && wide ? randomToken(18) : undefined
+  const extraHosts = [...(o.allowHosts ?? []), ...(o.publicHost ? [o.publicHost] : [])]
+  const auth = new Auth({ host: o.host, appPort: o.appPort ?? 0, controlPort: o.controlPort, extraHosts, team, publicScheme: o.publicScheme, embedToken })
   const artifacts = new ArtifactStore(dataDir)
   const uploads = new Uploads(dataDir)
   const mode: HarnessMode = noAgent ? 'review' : (o.mode ?? detectMode(o.target!))
@@ -100,8 +109,9 @@ export async function startHarness(o: HarnessOptions): Promise<Harness> {
   const review = new ReviewStore(dataDir, o.target?.host ?? '')
   const bookmarkletToken = randomToken(18)
   const shownHost = o.host === '0.0.0.0' || o.host === '::' || o.host === '127.0.0.1' ? 'localhost' : o.host
-  const appUrl = auth.origin(shownHost, o.appPort || o.controlPort)
-  const shareHost = o.host === '0.0.0.0' || o.host === '::' ? (lanAddress() ?? shownHost) : shownHost
+  const reachHost = o.publicHost || shownHost
+  const appUrl = auth.origin(reachHost, o.appPort || o.controlPort)
+  const shareHost = o.publicHost || (o.host === '0.0.0.0' || o.host === '::' ? (lanAddress() ?? shownHost) : shownHost)
   const shareUrl = o.share ? `${auth.origin(shareHost, o.controlPort)}/__ph/join?t=${team.invite}` : undefined
   const gateway = new Gateway({
     project: o.project,
@@ -143,12 +153,13 @@ export async function startHarness(o: HarnessOptions): Promise<Harness> {
     bookmarklet,
     bookmarkletToken,
     lang: o.lang,
+    embedOrigins: o.embedOrigins,
   })
 
   let closed = false
   return {
     appUrl: bookmarklet ? auth.origin(shownHost, o.controlPort) : appUrl,
-    controlUrl: auth.origin(shownHost, o.controlPort),
+    controlUrl: auth.origin(bookmarklet ? shownHost : reachHost, o.controlPort),
     agents,
     defaultAgent,
     mode,
@@ -156,6 +167,7 @@ export async function startHarness(o: HarnessOptions): Promise<Harness> {
     bookmarklet,
     noAgent,
     bookmarkletToken,
+    embedToken,
     gateway,
     auth,
     async close() {

@@ -55,6 +55,8 @@ declare global {
       token?: string
       /** Startup `--lang`. When set, the dock stays in this language. */
       lang?: Lang
+      /** `--embed-origin`: parent windows allowed to frame the page and receive quoted elements. */
+      embed?: string[]
     }
     __phRelay?: boolean
     __phHost?: PageHost

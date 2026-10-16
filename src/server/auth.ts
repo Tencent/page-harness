@@ -44,6 +44,8 @@ export interface AuthOptions {
   team?: Team
   /** Scheme browsers use to reach both ports, "https" behind a TLS-terminating load balancer. */
   publicScheme?: PublicScheme
+  /** Required on non-loopback connections when the preview is embedded and not shared. */
+  embedToken?: string
 }
 
 export type PublicScheme = 'http' | 'https'
@@ -60,12 +62,28 @@ export function isLoopback(req: IncomingMessage): boolean {
   return LOOPBACK.has(req.socket.remoteAddress ?? '')
 }
 
+/** In-app path for the embed redirect. Rejects scheme, host, and protocol-relative targets. */
+export function embedNext(raw: string | null): string | null {
+  if (!raw) return null
+  let u: URL
+  try {
+    u = new URL(raw, 'http://localhost')
+  } catch {
+    return null
+  }
+  if (u.origin !== 'http://localhost') return null
+  if (!u.pathname.startsWith('/') || u.pathname.startsWith('//') || u.pathname.includes('\\')) return null
+  return u.pathname + u.search + u.hash
+}
+
 export class Auth {
   readonly uiSecret = randomToken()
   private mcpTokens = new Map<string, McpScope>()
   readonly cookieName: string
   /** Reviewer pass for the app port, so other machines only see the page through the invite. */
   readonly appCookieName: string
+  /** Proves a non-loopback browser exchanged the embed token. Scoped to the host, so both ports see it. */
+  readonly embedCookieName: string
   readonly scheme: PublicScheme
   private hostnames: Set<string>
 
@@ -73,6 +91,7 @@ export class Auth {
     this.scheme = opts.publicScheme ?? 'http'
     this.cookieName = `__ph_${opts.controlPort}`
     this.appCookieName = `${this.cookieName}_app`
+    this.embedCookieName = `__ph_embed_${opts.controlPort}`
     const names = new Set(['localhost', '127.0.0.1', '[::1]', '::1'])
     if (opts.host && opts.host !== '0.0.0.0' && opts.host !== '::') names.add(opts.host)
     if (opts.host === '0.0.0.0' || opts.host === '::') {
@@ -116,6 +135,7 @@ export class Auth {
    * the owner session, and while sharing other machines get nothing (they need the invite link).
    */
   issuePageSession(req: IncomingMessage, res: ServerResponse): Who | null {
+    if (!this.allowEmbed(req)) return null
     const who = this.identify(req)
     if (who) return who
     if (this.sharing && !isLoopback(req)) return null
@@ -135,8 +155,25 @@ export class Auth {
     return { access: 'reviewer', id }
   }
 
+  /** Non-loopback embed previews need the cookie from /__ph/embed. Loopback, including SSH forwards, stays open. */
+  allowEmbed(req: IncomingMessage): boolean {
+    if (!this.opts.embedToken || isLoopback(req)) return true
+    const v = parseCookies(req.headers.cookie)[this.embedCookieName]
+    return !!v && safeEqual(v, this.opts.embedToken)
+  }
+
+  acceptEmbedToken(token: string): boolean {
+    return !!this.opts.embedToken && safeEqual(token, this.opts.embedToken)
+  }
+
+  issueEmbedCookie(res: ServerResponse): void {
+    if (!this.opts.embedToken) return
+    res.appendHeader('Set-Cookie', `${this.embedCookieName}=${this.opts.embedToken}; Path=/; HttpOnly; SameSite=Lax${this.secureAttr}`)
+  }
+
   /** App port: open locally; while sharing, other machines need the pass from the invite link. */
   allowApp(req: IncomingMessage): boolean {
+    if (!this.allowEmbed(req)) return false
     if (!this.sharing || isLoopback(req)) return true
     const v = parseCookies(req.headers.cookie)[this.appCookieName]
     return !!v && !!this.opts.team?.verify(v)

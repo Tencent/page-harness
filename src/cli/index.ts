@@ -44,6 +44,11 @@ Options
   --lang <zh|en>         Home page and dock language. Omit it and each browser keeps its own.
   --share                Listen on the network and print an invite link: teammates join as reviewers
                          (comment, reply, resolve, approve, edit text/style in review mode; never the agent)
+  --public-host <name>   Hostname or IP teammates use to reach this machine. Used in the invite link and
+                         accepted as a Host header (default: the first LAN address)
+  --json                 Print one JSON line with the URLs to stdout once the servers are listening
+  --embed-origin <url>   Let this origin show the page in an iframe (repeatable), e.g. an IDE preview pane.
+                         Pick → Quote then posts the element to that window instead of the chat
   --verbose / --quiet
   -v, --version
   -h, --help
@@ -134,6 +139,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       'no-agent': { type: 'boolean' },
       lang: { type: 'string' },
       share: { type: 'boolean' },
+      'public-host': { type: 'string' },
+      json: { type: 'boolean' },
+      'embed-origin': { type: 'string', multiple: true },
       verbose: { type: 'boolean' },
       quiet: { type: 'boolean' },
       version: { type: 'boolean', short: 'v' },
@@ -151,6 +159,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   if (values.verbose) log.setVerbose(true)
   if (values.quiet) log.setQuiet(true)
   const lang = parseLang(values.lang)
+  const publicHost = publicHostOf(values['public-host'])
 
   const rawTarget = positionals[0]
   if (!rawTarget) {
@@ -168,9 +177,11 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       controlPort,
       allowHosts: values['allow-host'],
       publicScheme: schemeOf(values['public-scheme']),
+      publicHost,
       noAgent: true,
       lang,
     })
+    if (values.json) printReady(h, project)
     log.info(`v${version()}`)
     process.stderr.write(
       [
@@ -206,6 +217,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     allowHosts: values['allow-host'],
     keepHost: values['keep-host'],
     publicScheme,
+    publicHost,
+    embedOrigins: embedOriginsOf(values['embed-origin']),
     agentPaths: {
       claude: values['claude-path'],
       codex: values['codex-path'],
@@ -219,6 +232,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
     noAgent,
     lang,
   })
+  if (values.json) printReady(h, project, target)
 
   const agentLine = h.agents
     .map((a) => (a.available ? `${a.id === h.defaultAgent ? log.bold(a.id) : a.id}${a.version ? ` ${log.dim(a.version)}` : ''}` : log.dim(`${a.id} (not found)`)))
@@ -254,6 +268,48 @@ function schemeOf(raw: string | undefined): 'http' | 'https' {
   const s = raw ?? 'http'
   if (s !== 'http' && s !== 'https') throw new Error('--public-scheme must be http or https')
   return s
+}
+
+export function publicHostOf(raw: string | undefined): string | undefined {
+  const s = raw?.trim()
+  if (!s) return undefined
+  if (s.includes('://') || s.includes('/')) throw new Error('--public-host must be a hostname or IP address, without scheme or port')
+  const bare = s.replace(/^\[|\]$/g, '')
+  if (net.isIP(bare) === 6 && (s.startsWith('[') || bare.includes(':'))) return `[${bare.toLowerCase()}]`
+  if (net.isIP(s) === 4) return s
+  if (s.includes(':') || !/^[A-Za-z0-9.-]+$/.test(s)) throw new Error('--public-host must be a hostname or IP address, without scheme or port')
+  return s.toLowerCase()
+}
+
+export function embedOriginsOf(raw: string[] | undefined): string[] | undefined {
+  if (!raw?.length) return undefined
+  return raw.map((s) => {
+    let u: URL
+    try {
+      u = new URL(s.trim())
+    } catch {
+      throw new Error(`--embed-origin must be an origin like http://localhost:3080, got "${s}"`)
+    }
+    if ((u.protocol !== 'http:' && u.protocol !== 'https:') || u.origin !== s.trim().replace(/\/$/, '')) throw new Error(`--embed-origin must be an origin like http://localhost:3080, got "${s}"`)
+    return u.origin
+  })
+}
+
+function printReady(h: Awaited<ReturnType<typeof startHarness>>, project: string, target?: URL) {
+  const ready = {
+    event: 'ready',
+    version: version(),
+    pid: process.pid,
+    appUrl: h.appUrl,
+    controlUrl: h.controlUrl,
+    shareUrl: h.shareUrl ?? null,
+    mode: h.mode,
+    noAgent: h.noAgent,
+    project,
+    target: target?.href ?? null,
+    ...(h.embedToken ? { embedToken: h.embedToken } : {}),
+  }
+  process.stdout.write(JSON.stringify(ready) + '\n')
 }
 
 function installShutdown(h: { close(): Promise<void> }) {

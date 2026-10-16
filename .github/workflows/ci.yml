@@ -20,7 +20,9 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm run build:client
       - run: npm test
+      - run: node --test dsh-plugin/test/*.test.js
       - run: npm run build
 
   e2e:

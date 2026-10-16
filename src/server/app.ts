@@ -11,7 +11,7 @@ import type { AgentRegistry } from '../agents'
 import type { ClientMsg, Lang, ReviewDraft, ReviewItem, ReviewLook, ServerMsg } from '../shared/protocol'
 import { normalizeHost } from '../shared/paths'
 import { REVIEW_PAGE_SIZE, reviewMarkdown, reviewPrompt } from '../shared/review-read'
-import { safeEqual } from './auth'
+import { embedNext, safeEqual } from './auth'
 import { HOME_CSS, HOME_JS, homeFontFile, homeHtml, packageVersion } from './homePage'
 import { newId } from '../shared/util'
 import type { ArtifactStore } from './artifacts'
@@ -74,6 +74,8 @@ export interface AppOptions {
   bookmarkletToken?: string
   /** Forces the home page and the injected dock language. */
   lang?: Lang
+  /** Origins allowed to frame the app page; the dock posts quoted elements to them. */
+  embedOrigins?: string[]
 }
 
 class HttpError extends Error {
@@ -159,7 +161,8 @@ export async function startServers(o: AppOptions): Promise<Servers> {
   const appDir = path.join(dir, 'app')
   const controlOrigin = (req: IncomingMessage) => o.auth.origin(hostname(req), o.controlPort)
   const appOrigin = (req: IncomingMessage) => o.auth.origin(hostname(req), o.appPort)
-  const proxy = o.target ? createProxy({ target: o.target, cookieName: o.auth.cookieName, controlOrigin, keepHost: o.keepHost, scheme: o.auth.scheme }) : null
+  const embedOrigins = o.embedOrigins ?? []
+  const proxy = o.target ? createProxy({ target: o.target, cookieName: o.auth.cookieName, controlOrigin, keepHost: o.keepHost, scheme: o.auth.scheme, embedOrigins }) : null
 
   // ---------- app port ----------
   const pageScripts: Record<string, string> = {
@@ -179,8 +182,15 @@ export async function startServers(o: AppOptions): Promise<Servers> {
   const serveApp = (req: IncomingMessage, res: ServerResponse) => {
     if (!proxy || !o.target) return send(res, 500, 'page-harness: proxy is not running')
     if (!o.auth.checkHost(req, o.appPort)) return send(res, 421, 'page-harness: unexpected Host header')
-    if (!o.auth.allowApp(req)) return noAccess(res, 'Open this page with the invite link from the person running Page Harness.<br>请使用 Page Harness 发起人分享的邀请链接打开。')
     const url = new URL(req.url ?? '/', 'http://x')
+    if (url.pathname === '/__ph/embed' && req.method === 'GET') {
+      const next = embedNext(url.searchParams.get('next'))
+      if (!o.auth.acceptEmbedToken(url.searchParams.get('t') ?? '') || !next) return noAccess(res, 'This preview link is not valid.<br>预览链接无效。')
+      o.auth.issueEmbedCookie(res)
+      res.writeHead(302, { Location: next, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' })
+      return res.end()
+    }
+    if (!o.auth.allowApp(req)) return noAccess(res, 'Open this page with the invite link from the person running Page Harness.<br>请使用 Page Harness 发起人分享的邀请链接打开。')
     if (url.pathname.startsWith('/__ph/')) {
       if (url.pathname.startsWith(RELAY_PREFIX)) {
         if (!proxy.relay(req, res)) send(res, 403, 'page-harness: relay only reaches subdomains of the target site')
@@ -192,7 +202,7 @@ export async function startServers(o: AppOptions): Promise<Servers> {
       if (!existsSync(p)) return send(res, 503, `/* page-harness: ${file} missing, run npm run build */`, 'text/javascript')
       let body = readFileSync(p, 'utf8')
       if (file === 'overlay.js') {
-        body = `window.__PH_CONFIG=${JSON.stringify({ controlOrigin: controlOrigin(req), appPort: o.appPort, target: o.target.host, relay: proxy.site, ...(o.noAgent ? { noAgent: true } : {}), ...(o.lang ? { lang: o.lang } : {}) })};\n` + body
+        body = `window.__PH_CONFIG=${JSON.stringify({ controlOrigin: controlOrigin(req), appPort: o.appPort, target: o.target.host, relay: proxy.site, ...(o.noAgent ? { noAgent: true } : {}), ...(o.lang ? { lang: o.lang } : {}), ...(embedOrigins.length ? { embed: embedOrigins } : {}) })};\n` + body
       }
       return send(res, 200, body, 'text/javascript; charset=utf-8', { 'Cross-Origin-Resource-Policy': 'same-origin' })
     }
@@ -240,7 +250,7 @@ export async function startServers(o: AppOptions): Promise<Servers> {
     if (!existsSync(file)) return send(res, 503, 'page-harness: client build missing, run npm run build')
     const html = readFileSync(file, 'utf8').replace('<html', `<html data-app-origin="${appOrigin(req)}"`)
     send(res, 200, html, 'text/html; charset=utf-8', {
-      'Content-Security-Policy': panelCsp(req, page === 'panel' ? appOrigin(req) : "'none'"),
+      'Content-Security-Policy': panelCsp(req, page === 'panel' ? [appOrigin(req), ...embedOrigins].join(' ') : "'none'"),
       'Referrer-Policy': 'no-referrer',
       'Cross-Origin-Opener-Policy': page === 'history' ? 'same-origin' : 'unsafe-none',
     })
@@ -251,6 +261,7 @@ export async function startServers(o: AppOptions): Promise<Servers> {
   const control = http.createServer(async (req, res) => {
     try {
       if (!o.auth.checkHost(req, o.controlPort)) return send(res, 421, 'page-harness: unexpected Host header')
+      if (!o.auth.allowEmbed(req)) return noAccess(res, 'Open this preview from the embedding page.<br>请从嵌入预览的页面打开。')
       const url = new URL(req.url ?? '/', 'http://x')
       const p = url.pathname
       if (req.method === 'OPTIONS' && (p === '/__ph/overlay.js' || p.startsWith('/__ph/api/review'))) {
@@ -332,7 +343,7 @@ export async function startServers(o: AppOptions): Promise<Servers> {
     }
     try {
       const url = new URL(req.url ?? '/', 'http://x')
-      if (!o.auth.checkHost(req, o.controlPort) || url.pathname !== '/__ph/ws' || o.auth.checkWs(req)) return deny()
+      if (!o.auth.checkHost(req, o.controlPort) || !o.auth.allowEmbed(req) || url.pathname !== '/__ph/ws' || o.auth.checkWs(req)) return deny()
       const who = o.auth.identify(req)
       if (!who) return deny()
       wss.handleUpgrade(req, socket, head, (ws) => attachClient(ws, who))

@@ -164,6 +164,8 @@ npx page-harness https://example.com --share
 
 把 Share 链接（设置 → 团队里也有）发给同一网络的同事。打开后这个浏览器获得评审者身份，填一次显示名，就能实时看到页面上所有人的意见和修改。评审者可以评论、编辑（评审模式）、回复、解决、审批；不能使用或看到 Agent、对话、聊天记录、上传和页面控制。没有链接的其他机器一律 `403`。
 
+同事需要能访问两个端口：应用端口和控制端口。在云主机上，放行这两个端口，并加 `--public-host <公网 IP 或域名>`，邀请链接就会指向它。想在 DeepSeek Harness 里一键启动分享预览，见 [`dsh-plugin/`](./dsh-plugin/README.md)。
+
 ## 功能
 
 | 模块 | 亮点 |
@@ -225,6 +227,9 @@ page-harness [前端地址] [选项]
                          不给前端地址时默认就是这个模式。
   --lang <zh|en>         主页和底栏的语言。不写时，每个浏览器沿用自己的选择。
   --share                允许同一网络的同事以评审者身份加入（监听 0.0.0.0）
+  --public-host <name>   同事访问用的主机名或 IP，写进邀请链接并加入 Host 白名单
+  --json                 监听成功后往 stdout 打一行包含各地址的 JSON
+  --embed-origin <origin>  允许这个源用 iframe 嵌入页面和面板，取点引用会 postMessage 给它（可重复）
   --verbose / --quiet
 ```
 
