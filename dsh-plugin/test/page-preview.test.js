@@ -111,6 +111,19 @@ describe('PagePreview', () => {
     assert.equal(b.rev, 2)
   })
 
+  it('serves a static file directly when the CLI is missing', async () => {
+    const cwd = tmp()
+    writeFileSync(path.join(cwd, 'index.html'), '<h1>direct</h1>')
+    const p = make()
+    p.setEmbedOrigin('http://localhost:3080')
+    const s = await p.open({ path: 'index.html', cwd }, { ...config, cliPath: path.join(cwd, 'missing-cli.js') })
+    assert.equal(s.running, true)
+    assert.equal(s.direct, true)
+    assert.equal(s.page, '/index.html')
+    const response = await fetch(new URL(s.page, s.appUrl))
+    assert.equal(await response.text(), '<h1>direct</h1>')
+  })
+
   it('rejects files outside the workspace and public URLs', async () => {
     const cwd = tmp()
     const outside = tmp()
@@ -188,6 +201,8 @@ describe('notes', () => {
 
   it('renders the preview result for the agent', () => {
     assert.match(renderPreview({ running: true, label: 'index.html' }), /已在右侧预览：index.html/)
+    assert.match(renderPreview({ running: true, direct: true, label: 'index.html' }), /直接预览：index.html/)
+    assert.match(renderPreview({ running: true, direct: true, label: 'index.html' }), /取点、批注和分享不可用/)
     assert.match(renderPreview({ waitingForPage: true }), /打开 DSH 页面后/)
     assert.match(renderPreview({ running: false, error: 'boom' }), /boom/)
   })

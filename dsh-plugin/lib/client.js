@@ -63,6 +63,9 @@ window.__ModuleLoader__.load({
 .phd-icon svg{width:15px;height:15px}
 .phd-icon:disabled{opacity:.5;cursor:default}
 .phd-sharebox{flex:none;display:flex;align-items:center;gap:2px}
+.phd-notice{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--dsw-alias-border-l2,#e5e7eb);background:var(--dsw-alias-bg-module-platform,#f7f8fa);color:var(--dsw-alias-label-secondary,#4b5563);font-size:12px;line-height:18px}
+.phd-notice span{flex:1;min-width:0}
+.phd-notice .phd-btn{flex:none}
 .phd-switch{appearance:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 4px;border:0;border-radius:999px;background:transparent;color:var(--dsw-alias-label-secondary,#4b5563);font:inherit;font-size:12px;line-height:1;cursor:pointer}
 .phd-switch:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
 .phd-switch i{position:relative;flex:none;width:28px;height:16px;border-radius:999px;background:#a1a1aa;transition:background .15s ease}
@@ -152,6 +155,8 @@ window.__ModuleLoader__.load({
       serverDown: "启动了服务，但 {port} 还没有响应。", serverUnknown: "启动了服务，但没找到它的端口。", serverPick: "启动了服务，要预览哪一个？",
       previewIn: "已在右侧预览", showPreview: "打开预览",
       mixedPreview: "当前页面是 HTTPS，预览是 HTTP，浏览器会拦截。把 publicScheme 设为 https，并在预览端口前加 TLS。",
+      directPreview: "未安装 page-harness CLI，已直接打开页面；取点、批注和分享暂不可用。构建 CLI 或配置 cliPath 后刷新，可恢复完整预览。",
+      openPage: "在新标签打开页面",
       quoteClear: "全部移除", quoteRemove: "移除引用", quoteLocate: "在预览中定位", quoteCopySelector: "复制选择器",
     };
     const EN = {
@@ -171,6 +176,8 @@ window.__ModuleLoader__.load({
       serverDown: "A server was started, but {port} is not answering yet.", serverUnknown: "A server was started, but its port was not found.", serverPick: "A server was started. Which one to preview?",
       previewIn: "Shown in the preview pane", showPreview: "Show preview",
       mixedPreview: "This page is HTTPS and the preview is HTTP, so the browser blocks it. Set publicScheme to https and put TLS in front of the preview ports.",
+      directPreview: "The page-harness CLI is not installed, so the page is shown directly without Pick, Notes, or sharing. Build the CLI or set cliPath, then reload for the full preview.",
+      openPage: "Open the page in a new tab",
       quoteClear: "Remove all", quoteRemove: "Remove quote", quoteLocate: "Find in preview", quoteCopySelector: "Copy selector",
     };
     function isZh() {
@@ -880,7 +887,7 @@ window.__ModuleLoader__.load({
           h("div", { className: "phd-title phd-grow phd-ellipsis", title: s && s.label }, tr("preview") + (s && s.label ? " · " + s.label : "")),
           s && s.starting ? h("span", { className: "phd-badge off" }, tr("starting")) : null,
           src ? h("button", { type: "button", className: "phd-icon", title: tr("reload"), "aria-label": tr("reload"), onClick: () => setFrameKey((k) => k + 1) }, h(Icon, { d: ICON_RELOAD })) : null,
-          src ? h("div", { className: "phd-sharebox" },
+          src && !s.direct ? h("div", { className: "phd-sharebox" },
             h("button", {
               type: "button", role: "switch", className: "phd-switch" + (pending ? " busy" : ""),
               "aria-checked": switched, "aria-label": tr("share"), title: switched ? tr("shareStop") : tr("share"),
@@ -894,6 +901,10 @@ window.__ModuleLoader__.load({
           ) : null,
           h("button", { type: "button", className: "phd-icon", title: tr("close"), "aria-label": tr("close"), onClick: closePane }, "×"),
         ),
+        s && s.direct ? h("div", { className: "phd-notice" },
+          h("span", null, tr("directPreview")),
+          h("button", { type: "button", className: "phd-btn", disabled: !pageUrl, onClick: () => window.open(pageUrl, "_blank", "noopener") }, tr("openPage")),
+        ) : null,
         shareError ? h("div", { className: "phd-err" }, shareError) : null,
         src
           ? h("iframe", {

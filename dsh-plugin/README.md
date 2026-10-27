@@ -20,12 +20,13 @@ npm ci && npm run build
 dsh plugin --profile web add /absolute/path/to/page-harness/dsh-plugin
 ```
 
-重启 `dsh web`，强制刷新浏览器。插件会优先使用同一仓库的 `dist/cli.js`；也可以在设置里填 `cliPath`。
+重启 `dsh web`，强制刷新浏览器。通过 npm 安装插件时会自动安装 `page-harness` CLI 依赖，无需另外全局安装。插件会优先使用同一仓库的 `dist/cli.js`，其次使用依赖包里的 CLI；也可以在设置里填 `cliPath`。
 
 ## 右栏预览
 
 - **开发中随时打开**：点侧栏底部的 **开发预览**，会列出本机正在运行的 dev server（常见端口 3000、5173、8080 等，带页面标题），点 **预览** 就在当前对话右侧打开；也可以输入端口、URL 或工作区里的 HTML 文件。
 - Agent 写完或改完网页会调用 `page_harness_preview`，右栏自动打开并刷新。HTML 文件由插件在本机起的静态服务提供；也可以传 dev server 端口或 URL。
+- 找不到 page-harness CLI 时，右栏会直接打开页面，并显示降级原因和「在新标签打开页面」入口；静态 HTML 仍由插件的静态服务提供。此模式没有取点、批注和分享功能，构建 CLI 或配置 `cliPath` 后再次预览即可恢复完整功能。
 - 某一轮写了 HTML 文件时，对话里会出现「写了网页 xxx.html，要在右侧预览吗？」，点 **在右侧预览** 即可。
 - 某一轮改了脚本（js/ts/vue/svelte/css/py/package.json 等）时，会问「改了 xxx，要开启预览吗？」，点 **启动服务并预览**，Agent 会启动开发服务并在右侧预览。
 - 启动不能保证一次成功。插件先请求这个地址：通了才打开预览。纯静态站点由插件自己提供，不经过 Agent。需要 dev server 时，插件不会猜命令，只把**一条命令和一个目录**交给 Agent；Agent 跑完后用同一个地址再调一次，插件确认端口真的通了才打开。端口被占用时，预览会自动改用下一对端口再试一次。
