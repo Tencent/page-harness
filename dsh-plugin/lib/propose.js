@@ -40,11 +40,11 @@ export function adoptDraft(proposal, index) {
   const v = variants && variants.find((x) => x.index === index)
   if (!v) return ""
   const lines = []
+  const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ")
   const selector = String((proposal && proposal.selector) || "")
   const url = String((proposal && proposal.url) || "")
   const html = String((proposal && proposal.html) || "")
   if (selector) {
-    const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ")
     const tag = ((/^<([a-z][\w-]*)/i.exec(html) || [])[1] || "").toLowerCase()
     const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
     const attrs = [
@@ -55,11 +55,16 @@ export function adoptDraft(proposal, index) {
     ].filter(([, val]) => val).map(([k, val]) => k + '="' + esc(val) + '"').join(" ")
     lines.push("<page-element " + attrs + "></page-element>", "")
   }
-  const bits = []
-  if (v.text) bits.push("文案：" + v.text)
-  if (v.style) bits.push("样式：" + v.style)
-  if (v.image) bits.push("图片：" + v.image)
-  lines.push("采用第 " + v.index + " 版「" + v.label + "」。" + (bits.length ? bits.join(" ") : ""))
+  const body = []
+  if (v.text) body.push("文案：" + v.text)
+  if (v.style) body.push("样式：" + v.style)
+  if (v.image) body.push("图片：" + v.image)
+  if (body.length) {
+    lines.push("<page-variant index=\"" + esc(v.index) + "\" label=\"" + esc(v.label) + "\">")
+    lines.push(body.join("\n").replace(/<\/page-variant/gi, "< /page-variant"))
+    lines.push("</page-variant>", "")
+  }
+  lines.push("采用第 " + v.index + " 版「" + v.label + "」。")
   lines.push("请只改产生该元素的源码来实现这一版，然后调用 page_harness_preview 刷新。不要再提交新的候选，也不要把几版同时写进源码。")
   return lines.join("\n")
 }

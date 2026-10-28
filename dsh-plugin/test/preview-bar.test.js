@@ -39,6 +39,8 @@ describe('preview chrome', () => {
     assert.match(client, /const alreadyShown = !!showing && previewOpen && !buttons\.length && !error/)
     assert.match(client, /hasWork && !alreadyShown \? h\("div", \{ className: "phd-tail" \}/)
     assert.match(client, /type: "ph:candidate"/)
+    assert.match(client, /className: "phd-preview-line"/)
+    assert.doesNotMatch(functionBody(client, "PreviewToolView"), /phd-card/)
     assert.match(client, /ProposeToolView\(\) \{\s*\/\/[\s\S]*?return null;\s*\}/)
   })
 })

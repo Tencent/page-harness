@@ -63,9 +63,12 @@ describe('adoptDraft', () => {
     const draft = adoptDraft(p, 2)
     assert.match(draft, /<page-element url="http:\/\/127\.0\.0\.1:5173\/" selector="form button\.go" tag="button" text="提交"><\/page-element>/)
     assert.doesNotMatch(draft, /<button/)
+    assert.match(draft, /<page-variant index="2" label="换成行动句">\n文案：立即提交\n<\/page-variant>/)
     assert.match(draft, /采用第 2 版「换成行动句」/)
-    assert.match(draft, /文案：立即提交/)
     assert.match(draft, /page_harness_preview/)
+    const visible = draft.replace(/<page-variant\b[\s\S]*?<\/page-variant>/g, '').replace(/<page-element\b[\s\S]*?<\/page-element>/g, '')
+    assert.doesNotMatch(visible, /文案：/)
+    assert.doesNotMatch(visible, /样式：/)
     assert.match(draft, /不要再提交新的候选/)
     assert.equal(adoptDraft(p, 9), '')
   })
@@ -84,6 +87,26 @@ describe('adoptDraft', () => {
     assert.match(draft, /text="A &amp; B"/)
     assert.match(draft, /<page-element [^>]*><\/page-element>/)
     assert.doesNotMatch(draft, /<a href/)
+  })
+
+  it('hides a stylesheet inside the variant card', () => {
+    const css = 'body {\n  background: radial-gradient(ellipse 75% 60% at 50% 38%, #1d1810 0%, #0b0906 58%, #050504 100%);\n}\n.page { color: #f4eee1 }'
+    const p = proposeVariants({
+      selector: 'section.intro',
+      url: 'http://127.0.0.1:5173/',
+      html: '<section class="intro">封面</section>',
+      variants: [
+        { label: '黑金封面', style: css },
+        { label: '另一版', text: '你好' },
+      ],
+    })
+    const draft = adoptDraft(p, 1)
+    assert.match(draft, /<page-variant index="1" label="黑金封面">/)
+    assert.match(draft, /样式：body \{\n {2}background: radial-gradient/)
+    const visible = draft.replace(/<page-variant\b[\s\S]*?<\/page-variant>/g, '').replace(/<page-element\b[\s\S]*?<\/page-element>/g, '')
+    assert.doesNotMatch(visible, /background/)
+    assert.doesNotMatch(visible, /样式：/)
+    assert.match(visible, /采用第 1 版「黑金封面」/)
   })
 
   it('matches the copy the chat card uses', () => {

@@ -48,6 +48,15 @@ window.__ModuleLoader__.load({
 .phd-share{padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l2,#e5e7eb);max-height:50%;overflow:auto}
 .phd-empty .phd-card{width:100%;max-width:420px;align-self:center;box-sizing:border-box}
 .phd-icon.on{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6);color:var(--dsw-alias-label-primary,inherit)}
+.phd-preview-line{display:flex;flex-wrap:wrap;align-items:center;min-width:0;max-width:100%;min-height:28px;font-size:var(--dsh-content-font-size-secondary,13px);line-height:24px;color:var(--dsw-alias-label-primary,inherit)}
+.phd-preview-line .ic{flex:none;width:16px;height:16px;margin-right:8px;display:grid;place-items:center;color:var(--dsw-alias-label-secondary,#6b7280)}
+.phd-preview-line .ic svg{width:14px;height:14px}
+.phd-preview-line .lbl{flex:none;font-weight:400}
+.phd-preview-line .sep{flex:none;width:2px;height:2px;margin:0 8px;border-radius:1px;background:var(--dsw-alias-label-caption,#9ca3af)}
+.phd-preview-line .url{flex:0 1 auto;min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--dsw-alias-label-tertiary,#6b7280)}
+.phd-preview-line .go{flex:none;appearance:none;margin-left:8px;border:0;background:transparent;padding:0;font:inherit;font-size:inherit;line-height:inherit;color:var(--dsw-alias-label-tertiary,#6b7280);cursor:pointer}
+.phd-preview-line .go:hover{color:var(--dsw-alias-label-primary,inherit)}
+.phd-preview-line .phd-err{flex-basis:100%;margin:0 0 0 24px}
 .phd-tail{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary,#6b7280)}
 .phd-tail>svg{width:14px;height:14px;flex:none;opacity:.7}
 .phd-tail .phd-btn{padding:2px 8px}
@@ -125,6 +134,11 @@ window.__ModuleLoader__.load({
 .phd-msgq .phd-qrow{width:100%;justify-content:flex-end}
 .phd-msgq .phd-qrail{flex:none;max-width:100%;flex-wrap:wrap;justify-content:flex-end;overflow:visible}
 .phd-msgq .phd-qcard{padding-right:10px}
+.phd-vcard{position:relative;flex:none;box-sizing:border-box;display:flex;flex-direction:column;justify-content:center;gap:1px;width:220px;min-height:52px;padding:8px 26px 8px 12px;border-radius:14px;background:var(--dsw-alias-bg-layer-3,#fff);border:1px solid color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 35%,var(--dsw-alias-border-l2,#e4e7ec));box-shadow:0 1px 2px rgba(16,24,40,.05),0 8px 20px rgba(16,24,40,.04);color:var(--dsw-alias-label-primary,inherit);animation:phd-in .18s ease-out}
+.phd-vindex{font-size:11px;line-height:16px;font-weight:600;color:var(--dsw-alias-state-business-primary,#4d6bfe)}
+.phd-vname{font-size:13px;line-height:18px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.phd-vcard:hover .phd-qx,.phd-vcard:focus-within .phd-qx{opacity:1}
+.phd-msgq .phd-vcard{padding-right:12px}
 .phd-msgq .phd-qdetail{width:100%;box-sizing:border-box}
 .phd-vars{display:flex;flex-direction:column;gap:8px;margin-top:10px}
 .phd-var{display:flex;gap:8px;align-items:flex-start;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1,#eceef1)}
@@ -545,15 +559,32 @@ window.__ModuleLoader__.load({
       const m = QUOTE_RE.exec(block);
       return m ? parseQuote(m[1], m[2]) : null;
     }
-    /** Split text into its prose and the quote blocks it carries. */
+    function parseVariant(attrText, body) {
+      const v = { index: "", label: "", body: body || "" };
+      const re = /(\w+)="([^"]*)"/g;
+      let m;
+      while ((m = re.exec(attrText))) if (m[1] === "index" || m[1] === "label") v[m[1]] = unescAttr(m[2]);
+      return v.index || v.label ? v : null;
+    }
+    function parseVariantBlock(block) {
+      const m = /^<page-variant\b([^>]*)>\n?([\s\S]*?)\n?<\/page-variant>$/.exec(block);
+      return m ? parseVariant(m[1], m[2]) : null;
+    }
+    const BLOCK_RE = /<page-element\b([^>]*)>\n?([\s\S]*?)\n?<\/page-element>|<page-variant\b([^>]*)>\n?([\s\S]*?)\n?<\/page-variant>/g;
+    /** Split text into its prose and the quote or variant blocks it carries. */
     function splitQuotes(text) {
       const quotes = [];
-      QUOTE_RE.lastIndex = 0;
-      const rest = String(text).replace(QUOTE_RE, (_, attrs, html) => {
-        quotes.push(parseQuote(attrs, html));
+      const variants = [];
+      BLOCK_RE.lastIndex = 0;
+      const rest = String(text).replace(BLOCK_RE, (_, qAttrs, qHtml, vAttrs, vBody) => {
+        if (vAttrs != null) {
+          const v = parseVariant(vAttrs, vBody);
+          if (v) variants.push(v);
+        } else quotes.push(parseQuote(qAttrs, qHtml));
         return "";
       });
-      return { quotes, text: quotes.length ? rest.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim() : text };
+      const marked = quotes.length || variants.length;
+      return { quotes, variants, text: marked ? rest.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim() : text };
     }
 
     const KIND_ZH = { button: "按钮", link: "链接", image: "图片", field: "输入框", heading: "标题", text: "文本", list: "列表", media: "媒体", icon: "图标", form: "表单", nav: "导航", table: "表格", box: "区块" };
@@ -612,7 +643,17 @@ window.__ModuleLoader__.load({
       return shell.snapshot || (shell.state && shell.state.getSnapshot && shell.state.getSnapshot()) || null;
     }
     /** Insert the block as a reference chip; false when the composer cannot take one right now. */
-    function insertQuoteChip(sessionId, block, span) {
+    function blockLabel(block) {
+      const v = parseVariantBlock(block);
+      if (v) {
+        const head = isZh() ? "第 " + v.index + " 版" : "Variant " + v.index;
+        const label = head + " · " + (v.label || (isZh() ? "候选" : "Variant"));
+        return label.length > 24 ? label.slice(0, 23) + "…" : label;
+      }
+      const q = parseQuoteBlock(block);
+      return q ? chipLabel(q) : "element";
+    }
+    function insertQuoteChip(sessionId, block, span, label) {
       const c = composerOf(sessionId);
       if (!c) return false;
       let st = inputSnapshot(c.shell);
@@ -627,7 +668,7 @@ window.__ModuleLoader__.load({
         at = { start: st.draft.length, end: st.draft.length };
       }
       const q = parseQuoteBlock(block);
-      const reference = { source: QUOTE_SOURCE, ref: block, label: q ? chipLabel(q) : "element", clipboardText: block };
+      const reference = { source: QUOTE_SOURCE, ref: block, label: label || (q ? chipLabel(q) : "element"), clipboardText: block };
       return c.actx.bail(c.actx, "slash/input-insert-reference", { reference, span: { ...at, draftRev: st.draftRev } }) === true;
     }
     function adoptDraft(proposal, index) {
@@ -635,11 +676,11 @@ window.__ModuleLoader__.load({
       const v = variants && variants.find((x) => x.index === index)
       if (!v) return ""
       const lines = []
+      const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ")
       const selector = String((proposal && proposal.selector) || "")
       const url = String((proposal && proposal.url) || "")
       const html = String((proposal && proposal.html) || "")
       if (selector) {
-        const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ")
         const tag = ((/^<([a-z][\w-]*)/i.exec(html) || [])[1] || "").toLowerCase()
         const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
         const attrs = [
@@ -650,11 +691,16 @@ window.__ModuleLoader__.load({
         ].filter(([, val]) => val).map(([k, val]) => k + '="' + esc(val) + '"').join(" ")
         lines.push("<page-element " + attrs + "></page-element>", "")
       }
-      const bits = []
-      if (v.text) bits.push("文案：" + v.text)
-      if (v.style) bits.push("样式：" + v.style)
-      if (v.image) bits.push("图片：" + v.image)
-      lines.push("采用第 " + v.index + " 版「" + v.label + "」。" + (bits.length ? bits.join(" ") : ""))
+      const body = []
+      if (v.text) body.push("文案：" + v.text)
+      if (v.style) body.push("样式：" + v.style)
+      if (v.image) body.push("图片：" + v.image)
+      if (body.length) {
+        lines.push("<page-variant index=\"" + esc(v.index) + "\" label=\"" + esc(v.label) + "\">")
+        lines.push(body.join("\n").replace(/<\/page-variant/gi, "< /page-variant"))
+        lines.push("</page-variant>", "")
+      }
+      lines.push("采用第 " + v.index + " 版「" + v.label + "」。")
       lines.push("请只改产生该元素的源码来实现这一版，然后调用 page_harness_preview 刷新。不要再提交新的候选，也不要把几版同时写进源码。")
       return lines.join("\n")
     }
@@ -711,12 +757,24 @@ window.__ModuleLoader__.load({
       const parts = String(sel || "").split(/\s*>\s*/).filter(Boolean);
       return parts.length > 2 ? "… " + parts.slice(-2).join(" > ") : parts.join(" > ");
     }
+    function VariantCard({ v, onRemove }) {
+      return h("div", { className: "phd-vcard" },
+        h("span", { className: "phd-vindex" }, isZh() ? "第 " + v.index + " 版" : "Variant " + v.index),
+        h("span", { className: "phd-vname" }, v.label),
+        onRemove ? h("button", { type: "button", className: "phd-qx", title: tr("quoteRemove"), "aria-label": tr("quoteRemove"),
+          onClick: (e) => { e.stopPropagation(); onRemove(); } }, h(Icon, { d: ICON_X })) : null,
+      );
+    }
     function PageElementChip({ node }) {
       const d = (node && node.data) || {};
       const q = { url: d.url || "", selector: d.selector || "", tag: d.tag || "", text: d.text || "", html: "" };
       return h("span", { className: "phd-inline-quote" }, h(QuoteCard, {
         q, open: false, onToggle: () => highlightInPreview(q, true),
       }));
+    }
+    function PageVariantChip({ node }) {
+      const d = (node && node.data) || {};
+      return h("span", { className: "phd-inline-quote" }, h(VariantCard, { v: { index: d.index || "", label: d.label || "" } }));
     }
     function QuoteCard({ q, open, onToggle, onRemove, onAsk }) {
       const kind = quoteKind(q.tag);
@@ -778,17 +836,20 @@ window.__ModuleLoader__.load({
       actions.setDraft(cur.includes("page_harness_propose") ? cur : (cur.trim() ? cur.replace(/\s*$/, "") + "\n" : "") + line);
       if (typeof actions.submit === "function") setTimeout(() => actions.submit(), 0);
     }
-    function QuoteRail({ items, onRemove, onAsk, extra }) {
+    function QuoteRail({ items, onRemove, onAsk, extra, trail }) {
       const [openKey, setOpenKey] = useState(null);
       const opened = items.find((it) => it.key === openKey);
       return h(React.Fragment, null,
         h("div", { className: "phd-qrow" },
-          h("div", { className: "phd-qrail" }, items.map((it) => h(QuoteCard, {
-            key: it.key, q: it.q, open: it.key === openKey,
-            onToggle: () => setOpenKey(it.key === openKey ? null : it.key),
-            onRemove: onRemove ? () => onRemove(it) : undefined,
-            onAsk,
-          }))),
+          h("div", { className: "phd-qrail" },
+            items.map((it) => h(QuoteCard, {
+              key: it.key, q: it.q, open: it.key === openKey,
+              onToggle: () => setOpenKey(it.key === openKey ? null : it.key),
+              onRemove: onRemove ? () => onRemove(it) : undefined,
+              onAsk,
+            })),
+            trail || null,
+          ),
           extra || null,
         ),
         opened ? h(QuoteDetail, { q: opened.q }) : null,
@@ -804,51 +865,80 @@ window.__ModuleLoader__.load({
       const occurrences = (input && input.occurrences) || [];
       // Plain blocks (a restored draft, a paste) become chips again.
       useEffect(() => {
-        if (!input || input.phase !== "plain" || (input.draft || "").indexOf("<page-element") < 0) return;
-        QUOTE_RE.lastIndex = 0;
+        if (!input || input.phase !== "plain") return;
+        const draft = input.draft || "";
+        if (draft.indexOf("<page-element") < 0 && draft.indexOf("<page-variant") < 0) return;
+        const re = /<page-element\b[^>]*>[\s\S]*?<\/page-element>|<page-variant\b[^>]*>[\s\S]*?<\/page-variant>/g;
+        // Chip offsets in the draft are clipboard offsets. A chip is one character in the
+        // editor, so a block that follows another chip has to be mapped before insertion.
+        const spans = occurrences.concat((input && input.quotes) || []);
+        const detectAt = (offset) => {
+          let cut = 0;
+          for (const o of spans) {
+            const len = typeof o.length === "number" ? o.length : 0;
+            if (len > 1 && o.offset + len <= offset) cut += len - 1;
+          }
+          return offset - cut;
+        };
         let m;
-        while ((m = QUOTE_RE.exec(input.draft))) {
+        while ((m = re.exec(draft))) {
           const start = m.index;
           const end = start + m[0].length;
-          if (!occurrences.some((o) => o.offset < end && o.offset + o.length > start)) {
-            insertQuoteChip(sessionId, m[0], { start, end });
+          if (!spans.some((o) => o.offset < end && o.offset + (o.length || 0) > start)) {
+            insertQuoteChip(sessionId, m[0], { start: detectAt(start), end: detectAt(end) }, blockLabel(m[0]));
             return;
           }
         }
       }, [input && input.draftRev]);
-      const items = occurrences.filter((o) => o.source === QUOTE_SOURCE)
+      const owned = occurrences.filter((o) => o.source === QUOTE_SOURCE);
+      const items = owned
         .map((o) => ({ key: o.occurrenceId, id: o.occurrenceId, q: parseQuoteBlock(o.ref) }))
         .filter((it) => it.q);
-      if (!items.length) return null;
+      const variants = owned
+        .map((o) => ({ key: o.occurrenceId, id: o.occurrenceId, v: parseVariantBlock(o.ref) }))
+        .filter((it) => it.v);
+      if (!items.length && !variants.length) return null;
       const clear = () => {
-        for (const it of [...items].reverse()) removeQuoteChip(sessionId, it.id);
+        for (const it of [...items, ...variants].reverse()) removeQuoteChip(sessionId, it.id);
       };
-      const clearBtn = items.length > 1
+      const clearBtn = items.length + variants.length > 1
         ? h("button", { type: "button", className: "phd-qclear", onClick: clear }, tr("quoteClear"))
         : null;
+      const variantNodes = variants.map((it) => h(VariantCard, {
+        key: it.key, v: it.v, onRemove: () => removeQuoteChip(sessionId, it.id),
+      }));
       return h("div", { className: "phd-qdock" },
         h("div", { className: "phd-qpanel" },
-          h(QuoteRail, { items, extra: clearBtn, onAsk: requestCandidates, onRemove: (it) => removeQuoteChip(sessionId, it.id) }),
+          h(QuoteRail, {
+            items,
+            trail: variantNodes,
+            extra: clearBtn,
+            onAsk: requestCandidates,
+            onRemove: (it) => removeQuoteChip(sessionId, it.id),
+          }),
         ));
     }
 
     // ---------- sent messages ----------
     let slotsRef = null;
     function splitContent(content) {
+      const marked = (s) => s.quotes.length || s.variants.length;
       if (typeof content === "string") {
         const s = splitQuotes(content);
-        return s.quotes.length ? { quotes: s.quotes, content: s.text } : null;
+        return marked(s) ? { quotes: s.quotes, variants: s.variants, content: s.text } : null;
       }
       if (!Array.isArray(content)) return null;
       const quotes = [];
+      const variants = [];
       const next = content.map((block) => {
         if (!block || block.type !== "text" || typeof block.text !== "string") return block;
         const s = splitQuotes(block.text);
-        if (!s.quotes.length) return block;
+        if (!marked(s)) return block;
         quotes.push(...s.quotes);
+        variants.push(...s.variants);
         return { ...block, text: s.text };
       });
-      return quotes.length ? { quotes, content: next.filter((b) => !(b && b.type === "text" && b.text === "")) } : null;
+      return quotes.length || variants.length ? { quotes, variants, content: next.filter((b) => !(b && b.type === "text" && b.text === "")) } : null;
     }
     /** Wrap DSH's own renderer for a user-style node: quote blocks leave the bubble and render as cards. */
     function quotedNodeRenderer(key) {
@@ -861,8 +951,13 @@ window.__ModuleLoader__.load({
           .sort((a, b) => (a.options.priority || 0) - (b.options.priority || 0))[0];
         if (!base) return null;
         if (!split) return h(base.component, props);
+        const quotes = split.quotes || [];
+        const variants = split.variants || [];
         return h("div", { className: "phd-msg" },
-          h("div", { className: "phd-msgq" }, h(QuoteRail, { items: split.quotes.map((q, i) => ({ key: i, q })) })),
+          h("div", { className: "phd-msgq" },
+            quotes.length ? h(QuoteRail, { items: quotes.map((q, i) => ({ key: i, q })) }) : null,
+            variants.map((v, i) => h(VariantCard, { key: "v" + i, v })),
+          ),
           h(base.component, { ...props, node: { ...node, data: { ...node.data, content: split.content } } }));
       }
       return QuotedUserNode;
@@ -1055,12 +1150,15 @@ window.__ModuleLoader__.load({
           openPane();
         }
       }, [running, !!result]);
+      const paneOpen = usePreviewOpen();
       if (running || !result) return null;
-      return h("div", { className: "phd-card" },
-        h("div", { className: "phd-row" },
-          h("div", { className: "phd-title" }, tr("previewIn") + (result.label ? " · " + result.label : "")),
-          h("button", { type: "button", className: "phd-btn", onClick: () => { refreshPreview().catch(() => {}); openPane(); } }, tr("showPreview")),
-        ),
+      const label = result.label || "";
+      return h("div", { className: "phd-preview-line" },
+        h("span", { className: "ic", "aria-hidden": "true" }, h(Icon, { d: ICON_PREVIEW })),
+        h("span", { className: "lbl" }, tr("previewIn")),
+        label ? h("span", { className: "sep", "aria-hidden": "true" }) : null,
+        label ? h("span", { className: "url", title: label }, label) : null,
+        paneOpen ? null : h("button", { type: "button", className: "go", onClick: () => { refreshPreview().catch(() => {}); openPane(); } }, tr("showPreview")),
         result.error ? h("div", { className: "phd-err" }, result.error) : null,
       );
     }
@@ -1434,6 +1532,10 @@ window.__ModuleLoader__.load({
         name: "conversation.user.text.node",
         key: "page-element",
       }, PageElementChip));
+      slots.inject("conversation.user.text.node", () => slots.register({
+        name: "conversation.user.text.node",
+        key: "page-variant",
+      }, PageVariantChip));
       ctx.effect(() => ctx.uiConversation.userText.register({
         id: "page-element",
         order: -20,
@@ -1451,6 +1553,40 @@ window.__ModuleLoader__.load({
           };
         },
       }), "page-harness-element-text");
+      ctx.effect(() => ctx.uiConversation.userText.register({
+        id: "page-variant",
+        order: -19,
+        match(text, from) {
+          let i = from;
+          while (i < text.length) {
+            const tagAt = text.indexOf("<page-variant", i);
+            const proseAt = text.indexOf("采用第 ", i);
+            let start = tagAt < 0 ? proseAt : proseAt < 0 ? tagAt : Math.min(tagAt, proseAt);
+            if (start < 0) return;
+            if (start === tagAt) {
+              const m = /^<page-variant\b([^>]*)>\n?([\s\S]*?)\n?<\/page-variant>/.exec(text.slice(start));
+              if (m) {
+                const v = parseVariant(m[1], m[2]);
+                if (v) return {
+                  id: "page-variant",
+                  start,
+                  end: start + m[0].length,
+                  data: { index: v.index, label: v.label },
+                };
+              }
+            } else {
+              const m = /^采用第 (\d+) 版「([^」]*)」。((?:样式：|文案：|图片：)[\s\S]*?)(?=请只改产生该元素的源码|$)/.exec(text.slice(start));
+              if (m) return {
+                id: "page-variant",
+                start,
+                end: start + m[0].length,
+                data: { index: m[1], label: m[2] },
+              };
+            }
+            i = start + 1;
+          }
+        },
+      }), "page-harness-variant-text");
       for (const key of ["user", "steering"]) {
         const renderer = quotedNodeRenderer(key);
         slots.inject("conversation.chat.node", () => slots.register({ name: "conversation.chat.node", key, priority: -10, locale: "conversation" }, renderer));
