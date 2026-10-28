@@ -273,7 +273,7 @@ GET http://127.0.0.1:17991/__ph/api/review?scope=all&path=%2F&page=1&pageSize=20
 - **两个源。** 你的应用（以及其中任何脚本）在应用端口；面板、API、Agent 接口在控制端口，页面脚本读不到。
 - **所有者与评审者。** 不加 `--share` 时只有本机能连，一切按单用户处理。加了 `--share` 后，所有者会话只发给本机回环请求；其他机器必须通过邀请链接拿到带 HMAC 签名的评审者 Cookie（面板和应用端口各一个），没有就两个端口都返回 `403`。评审者在 WebSocket 上只能做评审操作，API 只能读产物，其余一律 `403`。所有者名字在设置 → 团队里修改。
 - **会话 Cookie。** 面板拿到 `HttpOnly`、`SameSite=Strict`、作用于 `/__ph` 的 Cookie；转发到你的开发服务器前会去掉它。
-- **API。** 读请求要求同源的 `Sec-Fetch-Site`；写请求要求匹配的 `Origin` 加自定义 `X-PH` 头。WebSocket 校验 Cookie 和 `Origin`。书签是例外：跨源读写意见必须带本次运行的 `X-PH-Token`，响应会反射该页面的 `Origin`（不会是 `*`）。`GET /__ph/api/review` 仍给 curl 用，不带 CORS 头。
+- **API。** 读请求要求同源的 `Sec-Fetch-Site`；写请求要求匹配的 `Origin` 加自定义 `X-PH` 头。WebSocket 校验 Cookie 和 `Origin`。书签是例外：跨源读写意见必须带本次运行的 `X-PH-Token`，响应会反射该页面的 `Origin`（不会是 `*`）。`GET /__ph/api/review` 仍给 curl 用，不带 CORS 头。`POST /__ph/api/review/resolve` 是本机 Agent 的接口，既不带 Cookie 也不带令牌：只接受不带 `Origin` 的请求（curl、复制出的提示词），浏览器、跨站请求和会话 Cookie 一律返回 `403`。
 - **MCP。** 每一轮 Agent 调用都发一个独立的 Bearer token（通过环境变量或私有临时文件传递，不出现在命令行），回合结束即作废。来自浏览器的 MCP 请求一律拒绝。
 - **Host 白名单。** `Host` 头不符的请求返回 `421`（防 DNS rebinding）。在局域网使用时用 `--allow-host` 添加。
 - **嵌入限制。** 面板只允许被应用源嵌入；聊天记录页不允许被任何页面嵌入。

@@ -184,4 +184,51 @@ describe('local review API', () => {
     await expect(WsClient.open(`ws://127.0.0.1:${controlPort}/__ph/ws`, { Origin: control })).rejects.toThrow(/403/)
     ws.close()
   })
+
+  // The endpoint is the local agent's, reached with plain curl: no cookie, no token. A page must
+  // not reach it, so anything a browser sends is refused. A page can post cross-site without a
+  // preflight by using a simple content type, which is why Content-Type is not the check.
+  it('refuses a page that tries to mark notes resolved', async () => {
+    const items = () => (JSON.parse(readFileSync(path.join(project, '.page-harness', 'review.json'), 'utf8')) as { items: ReviewItem[] }).items
+    const statuses = () => Object.fromEntries(items().map((i) => [i.n, i.status]))
+    // Whatever the tests above left open; nothing here depends on a specific number.
+    const n = items().find((i) => i.status === 'open')!.n
+    const before = statuses()
+
+    const resolve = (headers: Record<string, string>) =>
+      fetch(`${control}/__ph/api/review/resolve`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...headers },
+        body: JSON.stringify({ n, result: 'marked by a page' }),
+      })
+
+    const simpleType = await fetch(`${control}/__ph/api/review/resolve`, {
+      method: 'POST',
+      headers: { Origin: 'https://evil.example.com', 'Content-Type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ n, result: 'marked by a page' }),
+    })
+    expect(simpleType.status).toBe(403)
+    expect(await simpleType.json()).toEqual({ ok: false, error: 'browsers may not call the local agent API' })
+    expect((await resolve({ Origin: 'https://evil.example.com' })).status).toBe(403)
+    expect((await resolve({ Origin: control })).status).toBe(403)
+    expect((await resolve({ 'Sec-Fetch-Site': 'cross-site' })).status).toBe(403)
+    expect((await resolve({ Cookie: cookie })).status).toBe(403)
+
+    const preflight = await fetch(`${control}/__ph/api/review/resolve`, {
+      method: 'OPTIONS',
+      headers: { Origin: 'https://evil.example.com', 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type' },
+    })
+    expect(preflight.headers.get('access-control-allow-origin')).toBeNull()
+
+    // Nothing above touched the notes, and the documented curl call still works.
+    expect(statuses()).toEqual(before)
+    const curl = await fetch(`${control}/__ph/api/review/resolve`, {
+      method: 'POST',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ n, result: 'Handled' }),
+    })
+    expect(curl.status).toBe(200)
+    expect(await curl.json()).toEqual({ ok: true, n, status: 'resolved' })
+    expect(statuses()[n]).toBe('resolved')
+  })
 })

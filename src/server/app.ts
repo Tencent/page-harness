@@ -264,7 +264,9 @@ export async function startServers(o: AppOptions): Promise<Servers> {
       if (!o.auth.allowEmbed(req)) return noAccess(res, 'Open this preview from the embedding page.<br>请从嵌入预览的页面打开。')
       const url = new URL(req.url ?? '/', 'http://x')
       const p = url.pathname
-      if (req.method === 'OPTIONS' && (p === '/__ph/overlay.js' || p.startsWith('/__ph/api/review'))) {
+      // Preflight for the bookmarklet's cross-origin reads and writes. `/resolve` is excluded on
+      // purpose: it is the local agent's endpoint and no page may reach it (see checkLocalAgent).
+      if (req.method === 'OPTIONS' && p !== '/__ph/api/review/resolve' && (p === '/__ph/overlay.js' || p.startsWith('/__ph/api/review'))) {
         bookmarkletCors(req, res)
         res.writeHead(204, { 'Cache-Control': 'no-store' })
         return res.end()
@@ -518,6 +520,8 @@ async function serveReviewExtras(o: AppOptions, req: IncomingMessage, res: Serve
     return true
   }
   if (m === 'POST' && p === '/__ph/api/review/resolve') {
+    const err = o.auth.checkLocalAgent(req)
+    if (err) return json(res, { ok: false, error: err }, 403), true
     await serveReviewResolve(o.gateway, req, res)
     return true
   }
