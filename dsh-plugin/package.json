@@ -48,6 +48,9 @@
       ]
     }
   },
+  "dependencies": {
+    "page-harness": "^0.1.10"
+  },
   "peerDependencies": {
     "@deepseek-ai/cordis": "*",
     "@deepseek-ai/dsh-tools": "*",

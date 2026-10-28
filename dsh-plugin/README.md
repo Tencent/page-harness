@@ -20,7 +20,7 @@ npm ci && npm run build
 dsh plugin --profile web add /absolute/path/to/page-harness/dsh-plugin
 ```
 
-重启 `dsh web`，强制刷新浏览器。插件会优先使用同一仓库的 `dist/cli.js`；也可以在设置里填 `cliPath`。
+重启 `dsh web`，强制刷新浏览器。通过 npm 安装插件时会自动安装 `page-harness` CLI 依赖，无需另外全局安装。插件会优先使用同一仓库的 `dist/cli.js`，其次使用依赖包里的 CLI；也可以在设置里填 `cliPath`。
 
 ## 右栏预览
 
