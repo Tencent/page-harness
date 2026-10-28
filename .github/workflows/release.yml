@@ -27,6 +27,8 @@ jobs:
           pkg="v$(node -p "require('./package.json').version")"
           [ "$pkg" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != package.json $pkg"; exit 1; }
       - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
       - run: npm publish --access public
       - name: Publish page-harness-dsh
