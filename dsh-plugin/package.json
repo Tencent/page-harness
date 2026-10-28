@@ -34,6 +34,7 @@
     "access": "public"
   },
   "scripts": {
+    "check": "node --check lib/bring-up.js && node --check lib/client.js && node --check lib/detect.js && node --check lib/host.js && node --check lib/host-utils.js && node --check lib/page-preview.js && node --check lib/preview.js && node --check lib/preview-bar.js && node --check lib/propose.js && node --check lib/share-bar.js && node --check lib/static.js",
     "test": "node --test test/*.test.js"
   },
   "dsh": {

@@ -33,6 +33,7 @@ jobs:
         working-directory: dsh-plugin
         run: |
           npm ci
+          npm run check
           npm test
           ver="$(node -p "require('./package.json').version")"
           if npm view "page-harness-dsh@${ver}" version >/dev/null 2>&1; then
@@ -63,5 +64,6 @@ jobs:
         working-directory: dsh-plugin
         run: |
           npm ci
+          npm run check
           npm test
           npm publish --access public

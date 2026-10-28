@@ -7,6 +7,7 @@ import { defaultLang, pageStrings } from '../shared/i18n-page'
 import type { PageHost } from '../shared/page-host'
 import { startDirectReview } from './direct'
 import { installRelay } from './relay'
+import { applyCandidateContent, restoreCandidateElement } from './candidate'
 import { panelWatchAdvance, panelWatchDelay, panelWatchIdle } from './panel-watch'
 import { createReview } from './review'
 import { OVERLAY_CSS } from './style'
@@ -98,6 +99,8 @@ function init() {
   const nonce = (document.currentScript as HTMLScriptElement | null)?.nonce || document.querySelector<HTMLScriptElement>('script[data-page-harness]')?.nonce || ''
   const forcedLang: Lang | null = cfg.lang === 'en' || cfg.lang === 'zh-CN' ? cfg.lang : null
   let lang: Lang = forcedLang ?? defaultLang()
+  // Set by the embedding host (DSH). Once set, it wins over the panel and saved ph:lang.
+  let hostLang: Lang | null = null
   let t = pageStrings(lang)
   let theme: Theme = (store.get<string>(localStorage, 'ph:theme', '') as Theme) || 'light'
   let tab = tabId()
@@ -464,18 +467,156 @@ function init() {
     true,
   )
 
+  // DSH chat cards drive a temporary on-page candidate. Standalone never sends this message.
+  // Full CSS from the model is injected as a stylesheet; inline declarations are scoped to the element.
+  if (embeddable) {
+    interface HostVariant { index: number; label?: string; text?: string; style?: string; image?: string }
+    let candOrigin = ''
+    let candSpec: { selector: string; variants: HostVariant[]; index: number } | null = null
+    let candStyle: HTMLStyleElement | null = null
+    let candBar: HTMLElement | null = null
+    let candSaved: { el: HTMLElement; html: string; src: string | null; srcset: string | null } | null = null
+    let candPeek = false
+    const candFind = (selector: string) => {
+      try {
+        const el = document.querySelector(selector)
+        return el instanceof HTMLElement ? el : null
+      } catch {
+        return null
+      }
+    }
+    const candRestore = () => {
+      candStyle?.remove()
+      candStyle = null
+      if (!candSaved || !candSaved.el.isConnected) {
+        candSaved = null
+        return
+      }
+      restoreCandidateElement(candSaved.el, candSaved)
+    }
+    const candPlace = () => {
+      if (!candBar || !candSaved?.el.isConnected) return
+      const r = candSaved.el.getBoundingClientRect()
+      candBar.style.top = `${Math.max(8, r.top + 8)}px`
+      candBar.style.left = `${Math.max(8, Math.min(r.left + 8, innerWidth - candBar.offsetWidth - 8))}px`
+    }
+    const candPaint = (scroll: boolean) => {
+      if (!candSpec) return
+      const variant = candSpec.variants.find((v) => v.index === candSpec!.index) ?? candSpec.variants[0]
+      if (!variant) return
+      const el = candFind(candSpec.selector)
+      if (!el) return
+      if (!candSaved || candSaved.el !== el) {
+        candRestore()
+        candSaved = { el, html: el.innerHTML, src: el.getAttribute('src'), srcset: el.getAttribute('srcset') }
+      } else candRestore()
+      candSaved = { el, html: candSaved?.html ?? el.innerHTML, src: candSaved?.src ?? el.getAttribute('src'), srcset: candSaved?.srcset ?? el.getAttribute('srcset') }
+      if (candPeek) {
+        candPlace()
+        return
+      }
+      const css = applyCandidateContent(el, variant, candSpec.selector)
+      if (css) {
+        candStyle = document.createElement('style')
+        candStyle.setAttribute('data-ph-candidate', '')
+        candStyle.textContent = css
+        document.head.appendChild(candStyle)
+      }
+      if (scroll) el.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      candBar?.remove()
+      const list = candSpec.variants
+      const pos = Math.max(0, list.findIndex((v) => v.index === variant.index))
+      const bar = document.createElement('div')
+      bar.setAttribute('data-ph-candidate-bar', '')
+      Object.assign(bar.style, {
+        position: 'fixed', zIndex: '2147483646', display: 'flex', alignItems: 'center', gap: '4px',
+        padding: '4px', borderRadius: '10px', background: '#111', color: '#f4f4f5',
+        font: '12px/1.2 ui-sans-serif, system-ui, sans-serif', boxShadow: '0 8px 24px rgba(0,0,0,.28)',
+      })
+      const btn = (label: string, on: () => void) => {
+        const b = document.createElement('button')
+        b.type = 'button'
+        b.textContent = label
+        Object.assign(b.style, { appearance: 'none', border: '0', background: 'transparent', color: 'inherit', borderRadius: '7px', padding: '4px 8px', cursor: 'pointer', font: 'inherit' })
+        b.addEventListener('click', (ev) => { ev.stopPropagation(); on() })
+        return b
+      }
+      const go = (delta: number) => {
+        const next = list[(pos + delta + list.length) % list.length]
+        candSpec!.index = next.index
+        candPeek = false
+        candPaint(false)
+        if (candOrigin) window.parent.postMessage({ source: 'page-harness', type: 'ph:candidate-nav', selector: candSpec!.selector, index: next.index }, candOrigin)
+      }
+      bar.append(btn('‹', () => go(-1)))
+      const label = document.createElement('span')
+      label.textContent = `${pos + 1}/${list.length}  ${variant.label || ''}`.trim()
+      label.style.padding = '0 4px'
+      bar.append(label, btn('›', () => go(1)))
+      const peek = btn(t.original, () => {})
+      peek.addEventListener('pointerdown', (ev) => { ev.stopPropagation(); candPeek = true; candPaint(false) })
+      const unpeek = () => { if (!candPeek) return; candPeek = false; candPaint(false) }
+      peek.addEventListener('pointerup', unpeek)
+      peek.addEventListener('pointerleave', unpeek)
+      bar.append(peek)
+      layer.appendChild(bar)
+      candBar = bar
+      candPlace()
+    }
+    const candClear = () => {
+      candPeek = false
+      candSpec = null
+      candRestore()
+      candSaved = null
+      candBar?.remove()
+      candBar = null
+    }
+    followLayout(() => candPlace())
+    addEventListener('message', (e) => {
+      if (e.source !== window.parent || !allowedEmbed.includes(e.origin)) return
+      const d = e.data as { source?: string; type?: string; clear?: boolean; selector?: string; index?: number; variants?: HostVariant[] } | null
+      if (!d || d.source !== 'page-harness-host' || d.type !== 'ph:candidate') return
+      candOrigin = e.origin
+      if (d.clear) {
+        candClear()
+        return
+      }
+      if (!d.selector || !Array.isArray(d.variants) || !d.variants.length) return
+      const same = candSpec && candSpec.selector === d.selector
+      candSpec = { selector: d.selector, variants: d.variants.slice(0, 4), index: d.index || d.variants[0].index }
+      if (!same) candSaved = null
+      candPeek = false
+      candPaint(!same)
+    })
+  }
+
   // The embedding parent points at quoted elements (hover a quote card to see it here).
   if (embeddable) {
     let flashTimer: ReturnType<typeof setTimeout> | undefined
     addEventListener('message', (e) => {
       if (e.source !== window.parent || !allowedEmbed.includes(e.origin)) return
-      const d = e.data as { source?: string; type?: string; selector?: string | null; scroll?: boolean } | null
+      const d = e.data as { source?: string; type?: string; selector?: string | null; scroll?: boolean; lang?: string } | null
       if (!d || d.source !== 'page-harness-host') return
-      if (d.type === 'ph:hello') {
-        parents = [e.origin]
-        const queued = quoteWait
-        quoteWait = []
-        for (const pick of queued) window.parent.postMessage({ source: 'page-harness', type: 'ph:quote', pick }, e.origin)
+      if (d.type === 'ph:hello' || d.type === 'ph:lang') {
+        if (d.type === 'ph:hello') {
+          parents = [e.origin]
+          const queued = quoteWait
+          quoteWait = []
+          for (const pick of queued) window.parent.postMessage({ source: 'page-harness', type: 'ph:quote', pick }, e.origin)
+          window.parent.postMessage({ source: 'page-harness', type: 'ph:location', url: location.href }, e.origin)
+        }
+        const next: Lang | null = d.lang === 'en' || d.lang === 'zh-CN' ? d.lang : d.lang === 'zh' ? 'zh-CN' : null
+        if (next) {
+          hostLang = next
+          if (next !== lang) {
+            lang = next
+            t = pageStrings(lang)
+            store.set(localStorage, 'ph:lang', lang)
+            applyLang()
+            window.__phLive?.setLang(lang)
+            sendChat({ type: 'ph:attach', ...attachInfo() })
+          }
+        }
         return
       }
       if (d.type !== 'ph:highlight' || !parents.includes(e.origin) || chosen) return
@@ -491,6 +632,23 @@ function init() {
       if (el && d.scroll) flashTimer = setTimeout(() => showHl(null), 1600)
     })
     followLayout(() => !picking && !chosen && placeHl())
+    const postLocation = () => {
+      const origin = parents[0]
+      if (!origin) return
+      window.parent.postMessage({ source: 'page-harness', type: 'ph:location', url: location.href }, origin)
+    }
+    const watchHistory = (name: 'pushState' | 'replaceState') => {
+      const orig = history[name]
+      history[name] = function (this: History, ...args: Parameters<History['pushState']>) {
+        const result = orig.apply(this, args)
+        postLocation()
+        return result
+      }
+    }
+    watchHistory('pushState')
+    watchHistory('replaceState')
+    addEventListener('popstate', postLocation)
+    addEventListener('hashchange', postLocation)
   }
 
   const QUEUE_KEY = 'ph:picks'
@@ -630,7 +788,7 @@ function init() {
         else chatPort?.postMessage({ type: 'ph:theme', theme })
         break
       case 'ph:lang':
-        if (forcedLang) break
+        if (forcedLang || hostLang) break
         lang = m.lang
         t = pageStrings(lang)
         store.set(localStorage, 'ph:lang', lang)
