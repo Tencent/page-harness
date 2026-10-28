@@ -45,7 +45,7 @@ cd dsh-plugin && npm ci && npm run check && npm test
 - 插件测试用 `node --test`，放在 `dsh-plugin/test/*.test.js`。插件客户端不能 import 这些模块，所以纯函数在 `lib/*.js` 和 `lib/client.js` 各有一份，测试比较两边的函数体。
 - 改界面时用现有的端到端用例，或者在浏览器里把受影响的路径点一遍。只看一张截图不算验证。
 - 用户能看见的文案同时有中文和英文。DSH 插件跟随 `document.documentElement.lang`：`zh` 用 `zh-CN`，其余用英文。不要另存一套不会被 DSH 语言覆盖的语言偏好。
-- 提交说明用英文，一句说清原因。功能 PR 不改版本号；`page-harness` 和 `page-harness-dsh` 的版本在发版提交里一起处理。
+- 提交说明用英文，一句说清原因。功能 PR 不改版本号。发版只改并发布根包 `page-harness`。不要发布 `page-harness-dsh`；DSH 安装 npm 上的 `page-harness@<该版本>`。
 - 不提交 `.env`、token、`dist/`、`e2e/.tmp/`。
 
 ## DSH 插件

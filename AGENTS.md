@@ -34,4 +34,10 @@ npm test
 
 ## 提交
 
-版本号在发版提交里改，功能 PR 不要顺手改 `package.json` 的 `version`。提交说明用英文祈使句，说明为什么改。没有明确要求就不要 push，也不要开新的发布 tag。
+功能 PR 不要改 `package.json` 的 `version`。提交说明用英文祈使句，说明为什么改。没有明确要求就不要 push，也不要开新的发布 tag。
+
+## 发版
+
+只发布根包 `page-harness`。tag 必须是 `v` 加 `package.json` 里的版本，例如 `v0.1.12`。不要给 `page-harness-dsh` 单独发版，也不要改它的版本号。
+
+DSH 直接安装 npm 上的 `page-harness@<该版本>`。插件源码留在 `dsh-plugin/`，运行时用这个 CLI 包。以后每次发版都这样。
