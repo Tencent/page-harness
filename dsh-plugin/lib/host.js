@@ -1,6 +1,7 @@
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import Schema from '@deepseek-ai/schemastery'
 import { readBody, renderNotes, renderPreview, renderStatus, sameOrigin, sendJson } from './host-utils.js'
+import { proposeVariants, renderPropose } from './propose.js'
 import { DEV_PORTS, detectDevServers } from './detect.js'
 import { PagePreview, readNotes } from './page-preview.js'
 import { PreviewManager, READY_TIMEOUT_MS } from './preview.js'
@@ -49,6 +50,42 @@ export function apply(ctx, config) {
       const cwd = exec.agent?.session?.header?.cwd || process.cwd()
       if (!args.path && !args.url) args = { ...args, path: 'index.html' }
       return clone(await preview.open({ path: args.path ? String(args.path) : '', url: args.url ? String(args.url) : '', cwd }, config))
+    },
+  }))
+
+  ctx.tools.register(defineTool({
+    name: 'page_harness_propose',
+    description:
+      'Required when the user asks for candidates or options (候选, 给几个方案). Record 2 to 4 candidates for the picked element and stop. Do not write the options as a chat message, do not edit files, and do not call page_harness_preview. Each variant is copy, CSS, or an image. The user picks one on the card; only then edit the source and call page_harness_preview.',
+    parameters: {
+      selector: { type: 'string', required: true, description: 'CSS selector from the <page-element> block.' },
+      url: { type: 'string', description: 'Page URL from the <page-element> block, when present.' },
+      html: { type: 'string', description: 'outerHTML inside the <page-element> block, when present. Do not invent a different element.' },
+      variants: {
+        type: 'array',
+        required: true,
+        description: '2 to 4 candidates. Each needs a short label and at least one of text, style, or image.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            label: { type: 'string', required: true, description: 'Short name shown on the card, e.g. 更大的标题.' },
+            text: { type: 'string', description: 'Replacement copy. Omit when the copy stays.' },
+            style: { type: 'string', description: 'CSS declarations or a short style description, e.g. font-size: 28px; font-weight: 700.' },
+            image: { type: 'string', description: 'Image src or a short description of the image change.' },
+          },
+        },
+      },
+    },
+    output: {
+      schema: { type: 'object', additionalProperties: true },
+      render: (_args, value) => [{ type: 'text', text: renderPropose(value) }],
+      presentationMeta: (_args, value) => ({ kind: 'page-harness-propose', ...value }),
+    },
+    presentCall: (args) => ({ card: 'generic', title: `候选 · ${args.selector || '元素'}`, content: [] }),
+    presentResult: (args, { isError }) => ({ card: 'generic', title: isError ? '候选没有记下' : `已提交 ${Array.isArray(args.variants) ? args.variants.length : 0} 个候选`, content: [] }),
+    async execute(args) {
+      return proposeVariants(args)
     },
   }))
 
@@ -126,7 +163,8 @@ export function apply(ctx, config) {
       text: [
         'After you write or change a web page (HTML file or a dev server), call page_harness_preview with its path or URL: it shows the page in the preview pane on the right of this chat. Call it again after later edits to reload the pane.',
         'page_harness_preview checks that the URL responds before it starts, and serves a static site itself. If the result says the page is not up, run only the command it gives, in the directory it gives, with run_in_background. When that port answers, call page_harness_preview again with the same URL. Do not pick another directory or port, and do not run page-harness yourself. Prefer an explicit port when you start a server.',
-        'A <page-element url selector tag text>…</page-element> block in a user message is an element the user picked in the preview, with its outerHTML inside; the request around it is about that element. Edit the source file that produces it, and refer to it by what it is (the "提交" button), not by the raw block.',
+        'A <page-element url selector tag text> block in a user message is an element the user picked in the preview. Refer to it by what it is (the "提交" button), not by the raw block. Any markup inside the block is for you; the user does not see it.',
+        'When the user asks for candidates or options (候选, 给几个方案), the whole reply is one page_harness_propose call: pass that element\'s selector, url, and outerHTML, plus 2 to 4 variants. Do not list the options in the message. Do not edit files and do not call page_harness_preview yet. After they say 采用第 N 版, edit only the source for that one variant, then call page_harness_preview. Never write several variants into the source at once.',
         'When the user asks to apply their notes on the page (按意见改, 处理批注), call page_harness_notes and apply each open note.',
         'When the user wants teammates to preview or review a running web page (分享预览, 让同事看看页面, share preview), call page_harness_share with the dev server URL or port; give the share link exactly as returned, and mention that both the share port and the port after it must be reachable. Use page_harness_status to look up the link and page_harness_stop to stop sharing.',
         'Never run page-harness or npx page-harness through bash: the host process manages it.',

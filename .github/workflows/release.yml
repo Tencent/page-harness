@@ -27,12 +27,15 @@ jobs:
           pkg="v$(node -p "require('./package.json').version")"
           [ "$pkg" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != package.json $pkg"; exit 1; }
       - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
       - run: npm test
       - run: npm publish --access public
       - name: Publish page-harness-dsh
         working-directory: dsh-plugin
         run: |
           npm ci
+          npm run check
           npm test
           ver="$(node -p "require('./package.json').version")"
           if npm view "page-harness-dsh@${ver}" version >/dev/null 2>&1; then
@@ -63,5 +66,6 @@ jobs:
         working-directory: dsh-plugin
         run: |
           npm ci
+          npm run check
           npm test
           npm publish --access public

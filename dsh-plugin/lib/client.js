@@ -19,6 +19,16 @@ window.__ModuleLoader__.load({
 .phd-btn:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
 .phd-btn:disabled{opacity:.5;cursor:default}
 .phd-btn.primary{background:var(--dsw-alias-label-primary,#17191c);border-color:var(--dsw-alias-label-primary,#17191c);color:var(--dsw-alias-bg-layer-3,#fff)}
+.phd-btn.on{background:var(--dsw-alias-state-business-primary,#4d6bfe);border-color:transparent;color:#fff}
+.phd-live{box-sizing:border-box;max-width:560px;margin:8px 0;padding:10px 12px;display:flex;flex-direction:column;gap:8px;border-radius:16px;border:1px solid color-mix(in srgb, var(--dsw-alias-state-business-primary,#4d6bfe) 30%, var(--dsw-alias-border-l2,#e5e7eb));background:color-mix(in srgb, var(--dsw-alias-state-business-primary,#4d6bfe) 8%, var(--dsw-alias-bg-layer-3,#fff));color:var(--dsw-alias-label-primary,inherit);font-size:13px;line-height:20px}
+.phd-live .top{display:flex;align-items:center;gap:6px;min-width:0}
+.phd-live .ic{flex:none;color:var(--dsw-alias-state-business-primary,#4d6bfe)}
+.phd-live .title{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.phd-live .st{flex:none;height:20px;padding:0 8px;border-radius:999px;background:color-mix(in srgb, var(--dsw-alias-state-business-primary,#4d6bfe) 14%, transparent);color:var(--dsw-alias-state-business-primary,#4d6bfe);font-size:11px;line-height:20px}
+.phd-live .vars,.phd-live .acts{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.phd-live .acts{justify-content:flex-end}
+.phd-live.past{opacity:.55}
+.phd-live.past .phd-chip{cursor:default}
 .phd-field{display:flex;flex-direction:column;gap:4px;margin-top:10px;font-size:12px;color:var(--dsw-alias-label-secondary,#4b5563)}
 .phd-field input{box-sizing:border-box;width:100%;border:1px solid var(--dsw-alias-border-l2,#d1d5db);border-radius:8px;padding:6px 8px;font:inherit;font-size:13px;background:var(--dsw-alias-bg-layer-3,#fff);color:var(--dsw-alias-label-primary,inherit)}
 .phd-err{margin-top:8px;color:var(--dsw-alias-state-danger-primary,#b91c1c);font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:120px;overflow:auto}
@@ -38,41 +48,29 @@ window.__ModuleLoader__.load({
 .phd-share{padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l2,#e5e7eb);max-height:50%;overflow:auto}
 .phd-empty .phd-card{width:100%;max-width:420px;align-self:center;box-sizing:border-box}
 .phd-icon.on{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6);color:var(--dsw-alias-label-primary,inherit)}
-.phd-dock{position:fixed;top:0;right:0;bottom:0;z-index:30;display:flex;border-left:1px solid var(--dsw-alias-border-l2,#e5e7eb);background:var(--dsw-alias-bg-layer-2,#fff);box-sizing:border-box}
-.phd-dock>.phd-pane{flex:1;min-width:0}
-.phd-dock-handle{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:col-resize;z-index:2;touch-action:none}
-.phd-dock-handle:after{content:"";position:absolute;left:3px;top:50%;width:4px;height:36px;margin-top:-18px;border-radius:4px;background:var(--dsw-alias-border-l3,#cbd5e1);opacity:0;transition:opacity .15s}
-.phd-dock-handle:hover:after,.phd-dock.dragging .phd-dock-handle:after{opacity:1}
-.phd-edge{position:fixed;right:0;top:50%;z-index:30;width:18px;height:64px;margin-top:-32px;display:grid;place-items:center;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-right:0;border-radius:10px 0 0 10px;background:var(--dsw-alias-bg-layer-3,#fff);color:var(--dsw-alias-label-secondary,#4b5563);cursor:col-resize;touch-action:none;box-shadow:0 4px 14px rgba(15,23,42,.08)}
-.phd-edge:hover{width:22px;color:var(--dsw-alias-label-primary,inherit)}
-.phd-edge svg{width:12px;height:12px}
-.phd-drag-shield{position:fixed;inset:0;z-index:31;cursor:col-resize}
-.phd-tail{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:6px 0 2px;padding:8px 10px;border:1px solid var(--dsw-alias-border-l2,#e5e7eb);border-radius:10px;background:var(--dsw-alias-bg-module-platform,#f7f8fa);font-size:13px;color:var(--dsw-alias-label-secondary,#4b5563)}
-.phd-tail>svg{width:15px;height:15px;flex:none}
-.phd-tail .phd-btn{padding:3px 10px}
+.phd-tail{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary,#6b7280)}
+.phd-tail>svg{width:14px;height:14px;flex:none;opacity:.7}
+.phd-tail .phd-btn{padding:2px 8px}
 .phd-tail .phd-err{flex-basis:100%;margin-top:0}
 .phd-produced{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:6px 0 2px;font-size:12px;color:var(--dsw-alias-label-tertiary,#6b7280)}
 .phd-chip{appearance:none;border:0;border-radius:6px;padding:1px 6px;background:var(--dsw-alias-markdown-tag,#f3f4f6);color:var(--dsw-alias-label-secondary,#4b5563);font:inherit;font-size:12px;cursor:pointer}
 .phd-chip:hover{color:var(--dsw-alias-label-primary,inherit)}
+.phd-tab{box-sizing:border-box;flex:1 1 auto;align-self:stretch;width:100%;height:100%;min-height:0;min-width:0;display:flex;flex-direction:column}
+.phd-tab>.phd-pane{flex:1 1 auto;min-height:0;height:100%}
 .phd-pane{display:flex;flex-direction:column;height:100%;min-height:0;background:var(--dsw-alias-bg-layer-2,#fff);color:var(--dsw-alias-label-primary,inherit);font-size:13px}
-.phd-bar{display:flex;align-items:center;gap:6px;padding:8px 10px;border-bottom:1px solid var(--dsw-alias-border-l2,#e5e7eb);min-width:0}
-.phd-bar .phd-title{font-size:13px}
-.phd-bar .phd-btn{padding:3px 8px}
-.phd-icon{appearance:none;flex:none;width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-secondary,#4b5563);cursor:pointer;font:inherit;font-size:15px;line-height:1}
-.phd-icon:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
+.phd-bar{display:flex;align-items:center;gap:2px;height:36px;padding:0 6px 0 12px;border-bottom:1px solid var(--dsw-alias-border-l1,#eceef1);min-width:0;background:transparent}
+.phd-url{min-width:0;font-size:12px;line-height:18px;font-weight:400;color:var(--dsw-alias-label-tertiary,#6b7280)}
+.phd-icon{appearance:none;flex:none;width:28px;height:28px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-tertiary,#6b7280);cursor:pointer;font:inherit;font-size:15px;line-height:1}
+.phd-icon:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6);color:var(--dsw-alias-label-primary,inherit)}
 .phd-icon svg{width:15px;height:15px}
-.phd-icon:disabled{opacity:.5;cursor:default}
-.phd-sharebox{flex:none;display:flex;align-items:center;gap:2px}
-.phd-switch{appearance:none;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 4px;border:0;border-radius:999px;background:transparent;color:var(--dsw-alias-label-secondary,#4b5563);font:inherit;font-size:12px;line-height:1;cursor:pointer}
-.phd-switch:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6)}
-.phd-switch i{position:relative;flex:none;width:28px;height:16px;border-radius:999px;background:#a1a1aa;transition:background .15s ease}
-.phd-switch i::after{content:"";position:absolute;top:2px;left:2px;width:12px;height:12px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s ease}
-.phd-switch[aria-checked=true]{color:var(--dsw-alias-label-primary,inherit)}
-.phd-switch[aria-checked=true] i{background:#059669}
-.phd-switch[aria-checked=true] i::after{transform:translateX(12px)}
-.phd-switch:disabled{cursor:default}
-.phd-switch.busy{opacity:.7}
-.phd-frame{flex:1;min-height:0;border:0;width:100%;background:#fff}
+.phd-icon:disabled{opacity:.4;cursor:default}
+.phd-sharebox{flex:none;display:flex;align-items:center}
+.phd-share{appearance:none;height:28px;padding:0 8px;border:0;border-radius:8px;background:transparent;color:var(--dsw-alias-label-tertiary,#6b7280);font:inherit;font-size:12px;line-height:28px;cursor:pointer}
+.phd-share:hover{background:var(--dsw-alias-interactive-bg-hover,#f3f4f6);color:var(--dsw-alias-label-primary,inherit)}
+.phd-share[aria-checked=true]{color:var(--dsw-alias-state-success-primary,#047857)}
+.phd-share:disabled{opacity:.4;cursor:default}
+.phd-share.busy{opacity:.7}
+.phd-frame{flex:1 1 auto;min-height:0;height:0;border:0;width:100%;background:#fff}
 .phd-empty{flex:1;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:24px;color:var(--dsw-alias-label-tertiary,#6b7280)}
 .phd-open{display:flex;gap:6px;margin-top:10px}
 .phd-open input{flex:1;min-width:0;box-sizing:border-box;border:1px solid var(--dsw-alias-border-l2,#d1d5db);border-radius:8px;padding:5px 8px;font:inherit;font-size:13px;background:var(--dsw-alias-bg-layer-3,#fff);color:var(--dsw-alias-label-primary,inherit)}
@@ -115,6 +113,9 @@ window.__ModuleLoader__.load({
 .phd-qlocate:hover{background:color-mix(in srgb,var(--dsw-alias-state-business-primary,#4d6bfe) 16%,transparent)}
 .phd-qlocate svg{width:13px;height:13px}
 .phd-qcode{margin:0;padding:8px 12px 10px;max-height:140px;overflow:auto;font-size:11.5px;line-height:18px;white-space:pre-wrap;word-break:break-all;color:var(--dsw-alias-label-secondary,#4b5563)}
+.phd-qask{flex:none;appearance:none;border:0;background:transparent;padding:0 2px;font:inherit;font-size:12px;color:var(--dsw-alias-label-secondary,#4b5563);cursor:pointer}
+.phd-qask:hover{color:var(--dsw-alias-label-primary,inherit)}
+.phd-inline-quote{display:flex;max-width:100%;margin:0 0 6px}
 .phd-qcode .t{color:var(--dsw-alias-state-business-primary,#4d6bfe)}
 .phd-qcode .a{color:var(--dsw-alias-state-warn-label,#b45309)}
 .phd-qcode .v{color:var(--dsw-alias-state-success-primary,#047857)}
@@ -125,6 +126,12 @@ window.__ModuleLoader__.load({
 .phd-msgq .phd-qrail{flex:none;max-width:100%;flex-wrap:wrap;justify-content:flex-end;overflow:visible}
 .phd-msgq .phd-qcard{padding-right:10px}
 .phd-msgq .phd-qdetail{width:100%;box-sizing:border-box}
+.phd-vars{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.phd-var{display:flex;gap:8px;align-items:flex-start;padding-top:8px;border-top:1px solid var(--dsw-alias-border-l1,#eceef1)}
+.phd-var .n{flex:none;width:18px;font-weight:600}
+.phd-var .body{flex:1;min-width:0}
+.phd-var .lbl{font-weight:500}
+.phd-var p{margin:2px 0 0;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary,#6b7280);word-break:break-word}
 `;
 
     function ensureCss() {
@@ -145,7 +152,7 @@ window.__ModuleLoader__.load({
       devTitle: "开发预览", devHint: "在对话右侧打开开发中的页面，可以取点引用到对话、留意见让 Agent 改。",
       devInput: "端口、URL 或工作区里的 HTML 文件", scanning: "正在查找本机的 dev server…", noServers: "没有发现运行中的 dev server。",
       needSession: "先打开一个会话，预览显示在对话右侧。", previewing: "正在预览", localServers: "本机运行中的页面",
-      dragResize: "拖动调整宽度", dragOpen: "点击或向左拖动打开预览", tailAsk: "写了网页 {name}，要在右侧预览吗？", openPreview: "在右侧预览", produced: "产物", tailShowing: "{name} 正在右侧预览",
+      tailAsk: "写了网页 {name}，要在右侧预览吗？", openPreview: "在右侧预览", produced: "产物", tailShowing: "{name} 正在右侧预览",
       scriptAsk: "改了 {name}，要开启预览吗？", startAndPreview: "启动服务并预览",
       askStart: "用 page_harness_preview 预览刚改的 {name}。如果它说页面还没起来，只执行它给的那一条命令、在它给的目录里，等端口通了再用同一个地址调用一次。",
       serverChecking: "检测到启动了服务，正在查找端口…", serverUp: "服务已启动 {port}，要在右侧预览吗？",
@@ -153,6 +160,7 @@ window.__ModuleLoader__.load({
       previewIn: "已在右侧预览", showPreview: "打开预览",
       mixedPreview: "当前页面是 HTTPS，预览是 HTTP，浏览器会拦截。把 publicScheme 设为 https，并在预览端口前加 TLS。",
       quoteClear: "全部移除", quoteRemove: "移除引用", quoteLocate: "在预览中定位", quoteCopySelector: "复制选择器",
+      candidates: "候选", adopt: "采用", discard: "放弃", onPage: "页面上", ready: "就绪", askCandidates: "给这个元素出候选", candidateText: "文案", candidateStyle: "样式", candidateImage: "图片",
     };
     const EN = {
       title: "Share preview", running: "Running", stopped: "Stopped", starting: "Starting…",
@@ -164,7 +172,7 @@ window.__ModuleLoader__.load({
       devTitle: "Dev preview", devHint: "Open the page you are building next to the chat: pick elements to quote, or leave notes for the agent.",
       devInput: "Port, URL, or an HTML file in the workspace", scanning: "Looking for dev servers on this machine…", noServers: "No running dev server found.",
       needSession: "Open a session first: the preview shows next to the chat.", previewing: "Previewing", localServers: "Running on this machine",
-      dragResize: "Drag to resize", dragOpen: "Click or drag left to open the preview", tailAsk: "Wrote {name}. Preview it on the right?", openPreview: "Preview on the right", produced: "Produced", tailShowing: "{name} is in the preview pane",
+      tailAsk: "Wrote {name}. Preview it on the right?", openPreview: "Preview on the right", produced: "Produced", tailShowing: "{name} is in the preview pane",
       scriptAsk: "Changed {name}. Start a preview?", startAndPreview: "Start the server and preview",
       askStart: "Preview the file I just changed ({name}) with page_harness_preview. If it says the page is not up, run only the command it gives, in the directory it gives, then call page_harness_preview again with the same URL.",
       serverChecking: "A server was started; looking for its port…", serverUp: "Server is up on {port}. Preview it on the right?",
@@ -172,10 +180,37 @@ window.__ModuleLoader__.load({
       previewIn: "Shown in the preview pane", showPreview: "Show preview",
       mixedPreview: "This page is HTTPS and the preview is HTTP, so the browser blocks it. Set publicScheme to https and put TLS in front of the preview ports.",
       quoteClear: "Remove all", quoteRemove: "Remove quote", quoteLocate: "Find in preview", quoteCopySelector: "Copy selector",
+      candidates: "Candidates", adopt: "Use this", discard: "Discard", onPage: "On page", ready: "Ready", askCandidates: "Propose candidates for this element", candidateText: "Copy", candidateStyle: "Style", candidateImage: "Image",
     };
-    function isZh() {
+    function phLang() {
       const lang = (typeof document !== "undefined" && document.documentElement.lang) || (typeof navigator !== "undefined" && navigator.language) || "";
-      return /^zh/i.test(lang);
+      return /^zh/i.test(lang) ? "zh-CN" : "en";
+    }
+    function isZh() {
+      return phLang() === "zh-CN";
+    }
+    const langListeners = new Set();
+    let seenLang = "";
+    function postPreviewLang(frame) {
+      const origin = previewOrigin(previewState);
+      const pane = frame || (typeof document !== "undefined" ? document.querySelector("iframe.phd-frame") : null);
+      if (!pane || !pane.contentWindow || !origin) return;
+      pane.contentWindow.postMessage({ source: "page-harness-host", type: "ph:lang", lang: phLang() }, origin);
+    }
+    function publishLang() {
+      const next = phLang();
+      if (next === seenLang) return;
+      seenLang = next;
+      for (const fn of langListeners) fn();
+      postPreviewLang();
+    }
+    function useDshLang() {
+      const [, setRev] = useState(0);
+      useEffect(() => {
+        const on = () => setRev((n) => n + 1);
+        langListeners.add(on);
+        return () => langListeners.delete(on);
+      }, []);
     }
     function tr(key, vars) {
       const dict = isZh() ? ZH : EN;
@@ -250,6 +285,7 @@ window.__ModuleLoader__.load({
     }
 
     function SidebarAction(props) {
+      useDshLang();
       const wide = props.wide;
       useEffect(() => ensureCss(), []);
       const [open, setOpen] = useState(false);
@@ -341,6 +377,7 @@ window.__ModuleLoader__.load({
     }
 
     function ToolView(props) {
+      useDshLang();
       useEffect(() => ensureCss(), []);
       const running = !!(props && props.block && !("kind" in props.block));
       const fromTool = running ? null : findStatus(props, 0);
@@ -358,34 +395,21 @@ window.__ModuleLoader__.load({
       return h(StatusCard, { status, busy, onStop: stop });
     }
 
-    // ---------- docked preview ----------
-    // A right-edge panel outside DSH's details column, whose width DSH caps at 520px.
+    // ---------- preview in DSH's right sidebar ----------
     let sessions = null;
+    let sidebarRight = null;
+    const PREVIEW_KIND = "page-harness";
+    const PREVIEW_TAB_ID = "page-harness-dsh";
     const bus = new EventTarget();
     let previewState = null;
-    const DOCK_KEY = "phd-dock-width";
-    const DOCK_MIN = 320;
-    let dock = { open: false, width: Number(safeStorage("get", DOCK_KEY)) || 0 };
     // The current session's composer, published by its header button.
     const bridge = { sessionId: "", draft: "", inputActions: null };
 
-    function safeStorage(op, key, value) {
-      try {
-        if (op === "get") return window.localStorage.getItem(key);
-        window.localStorage.setItem(key, value);
-      } catch { /* ignore */ }
-      return null;
-    }
     function emit() {
       bus.dispatchEvent(new Event("change"));
     }
     function setPreview(s) {
       previewState = s;
-      emit();
-    }
-    function setDock(next) {
-      dock = { ...dock, ...next };
-      if (next.width) safeStorage("set", DOCK_KEY, String(Math.round(next.width)));
       emit();
     }
     function refreshPreview(method, payload) {
@@ -394,11 +418,31 @@ window.__ModuleLoader__.load({
         return s;
       });
     }
+    function previewTabs() {
+      try {
+        return (sidebarRight && sidebarRight.openTabs && sidebarRight.openTabs.getSnapshot()) || [];
+      } catch {
+        return [];
+      }
+    }
     function openPane() {
-      setDock({ open: true });
+      if (!sidebarRight) return;
+      try { sidebarRight.openTab(PREVIEW_KIND); } catch { /* no session on screen */ }
     }
     function closePane() {
-      setDock({ open: false });
+      const tab = previewTabs().find((t) => t.kind === PREVIEW_KIND);
+      if (!tab || !sidebarRight) return;
+      try { sidebarRight.close(tab.tabId); } catch { /* ignore */ }
+    }
+    function usePreviewOpen() {
+      return React.useSyncExternalStore(
+        (on) => {
+          const tabs = sidebarRight && sidebarRight.openTabs;
+          if (!tabs || typeof tabs.subscribe !== "function") return () => {};
+          return tabs.subscribe(on) || (() => {});
+        },
+        () => previewTabs().some((t) => t.kind === PREVIEW_KIND),
+      );
     }
     function useBus(read) {
       const [v, set] = useState(read);
@@ -412,16 +456,6 @@ window.__ModuleLoader__.load({
     }
     function usePreview() {
       return useBus(() => previewState);
-    }
-    function useDock() {
-      return useBus(() => dock);
-    }
-    function dockMax() {
-      return Math.max(DOCK_MIN, window.innerWidth - 360);
-    }
-    function dockWidth(w) {
-      const want = w || Math.round(window.innerWidth * 0.45);
-      return Math.min(dockMax(), Math.max(DOCK_MIN, want));
     }
     function previewOrigin(s) {
       try {
@@ -596,6 +630,34 @@ window.__ModuleLoader__.load({
       const reference = { source: QUOTE_SOURCE, ref: block, label: q ? chipLabel(q) : "element", clipboardText: block };
       return c.actx.bail(c.actx, "slash/input-insert-reference", { reference, span: { ...at, draftRev: st.draftRev } }) === true;
     }
+    function adoptDraft(proposal, index) {
+      const variants = proposal && proposal.variants
+      const v = variants && variants.find((x) => x.index === index)
+      if (!v) return ""
+      const lines = []
+      const selector = String((proposal && proposal.selector) || "")
+      const url = String((proposal && proposal.url) || "")
+      const html = String((proposal && proposal.html) || "")
+      if (selector) {
+        const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, " ")
+        const tag = ((/^<([a-z][\w-]*)/i.exec(html) || [])[1] || "").toLowerCase()
+        const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim()
+        const attrs = [
+          ["url", url],
+          ["selector", selector],
+          ["tag", tag],
+          ["text", text.length > 160 ? text.slice(0, 160) + "…" : text],
+        ].filter(([, val]) => val).map(([k, val]) => k + '="' + esc(val) + '"').join(" ")
+        lines.push("<page-element " + attrs + "></page-element>", "")
+      }
+      const bits = []
+      if (v.text) bits.push("文案：" + v.text)
+      if (v.style) bits.push("样式：" + v.style)
+      if (v.image) bits.push("图片：" + v.image)
+      lines.push("采用第 " + v.index + " 版「" + v.label + "」。" + (bits.length ? bits.join(" ") : ""))
+      lines.push("请只改产生该元素的源码来实现这一版，然后调用 page_harness_preview 刷新。不要再提交新的候选，也不要把几版同时写进源码。")
+      return lines.join("\n")
+    }
     function quoteIntoComposer(pick) {
       const block = serializeQuote(pick);
       if (insertQuoteChip(bridge.sessionId, block)) return true;
@@ -649,26 +711,14 @@ window.__ModuleLoader__.load({
       const parts = String(sel || "").split(/\s*>\s*/).filter(Boolean);
       return parts.length > 2 ? "… " + parts.slice(-2).join(" > ") : parts.join(" > ");
     }
-    /** Lightly tinted HTML: tags, attribute names and values. */
-    function htmlTokens(src) {
-      const out = [];
-      const re = /(<\/?[\w:-]+)|(\s[\w:@.-]+)(=)("[^"]*"|'[^']*')|(\/?>)|(<!--[\s\S]*?-->)/g;
-      let last = 0;
-      let m;
-      let i = 0;
-      while ((m = re.exec(src))) {
-        if (m.index > last) out.push(src.slice(last, m.index));
-        if (m[1]) out.push(h("span", { key: i++, className: "t" }, m[1]));
-        else if (m[2]) out.push(h("span", { key: i++, className: "a" }, m[2]), m[3], h("span", { key: i++, className: "v" }, m[4]));
-        else if (m[5]) out.push(h("span", { key: i++, className: "t" }, m[5]));
-        else out.push(h("span", { key: i++, className: "c" }, m[6]));
-        last = re.lastIndex;
-      }
-      if (last < src.length) out.push(src.slice(last));
-      return out;
+    function PageElementChip({ node }) {
+      const d = (node && node.data) || {};
+      const q = { url: d.url || "", selector: d.selector || "", tag: d.tag || "", text: d.text || "", html: "" };
+      return h("span", { className: "phd-inline-quote" }, h(QuoteCard, {
+        q, open: false, onToggle: () => highlightInPreview(q, true),
+      }));
     }
-
-    function QuoteCard({ q, open, onToggle, onRemove }) {
+    function QuoteCard({ q, open, onToggle, onRemove, onAsk }) {
       const kind = quoteKind(q.tag);
       const name = quoteName(q);
       const page = quotePage(q);
@@ -690,6 +740,7 @@ window.__ModuleLoader__.load({
             h("span", { "aria-hidden": true }, "·"),
             h("code", null, shortSelector(q.selector) || q.tag)),
         ),
+        onAsk ? h("button", { type: "button", className: "phd-qask", title: tr("askCandidates"), onClick: (e) => { e.stopPropagation(); onAsk(); } }, tr("candidates")) : null,
         onRemove ? h("button", { type: "button", className: "phd-qx", title: tr("quoteRemove"), "aria-label": tr("quoteRemove"),
           onClick: (e) => { e.stopPropagation(); highlightInPreview(null); onRemove(); } }, h(Icon, { d: ICON_X })) : null,
       );
@@ -697,10 +748,11 @@ window.__ModuleLoader__.load({
 
     function QuoteDetail({ q }) {
       const [copied, setCopied] = useState(false);
+      const previewOpen = usePreviewOpen();
       const page = quotePage(q);
       const locate = () => {
-        if (!dock.open) openPane();
-        setTimeout(() => highlightInPreview(q, true), dock.open ? 0 : 400);
+        if (!previewOpen) openPane();
+        setTimeout(() => highlightInPreview(q, true), previewOpen ? 0 : 400);
       };
       const copy = () => {
         const done = () => { setCopied(true); setTimeout(() => setCopied(false), 1200); };
@@ -713,11 +765,20 @@ window.__ModuleLoader__.load({
           navigator.clipboard ? h("button", { type: "button", className: "phd-icon", title: copied ? tr("copied") : tr("quoteCopySelector"), onClick: copy }, h(Icon, { d: ICON_COPY })) : null,
           h("button", { type: "button", className: "phd-qlocate", onClick: locate }, h(Icon, { d: ICON_LOCATE }), h("span", null, tr("quoteLocate"))),
         ),
-        q.html ? h("pre", { className: "phd-qcode" }, htmlTokens(q.html)) : null,
       );
     }
 
-    function QuoteRail({ items, onRemove, extra }) {
+    function requestCandidates() {
+      const actions = bridge.inputActions;
+      if (!actions || typeof actions.setDraft !== "function") return;
+      const line = isZh()
+        ? "给几个候选。只调用 page_harness_propose，不要在回复里列方案。"
+        : "Give a few candidates. Call only page_harness_propose, and do not list the options in the reply.";
+      const cur = bridge.draft || "";
+      actions.setDraft(cur.includes("page_harness_propose") ? cur : (cur.trim() ? cur.replace(/\s*$/, "") + "\n" : "") + line);
+      if (typeof actions.submit === "function") setTimeout(() => actions.submit(), 0);
+    }
+    function QuoteRail({ items, onRemove, onAsk, extra }) {
       const [openKey, setOpenKey] = useState(null);
       const opened = items.find((it) => it.key === openKey);
       return h(React.Fragment, null,
@@ -726,6 +787,7 @@ window.__ModuleLoader__.load({
             key: it.key, q: it.q, open: it.key === openKey,
             onToggle: () => setOpenKey(it.key === openKey ? null : it.key),
             onRemove: onRemove ? () => onRemove(it) : undefined,
+            onAsk,
           }))),
           extra || null,
         ),
@@ -735,6 +797,7 @@ window.__ModuleLoader__.load({
 
     /** Cards for the quote chips in the draft, docked on top of the composer. */
     function ComposerQuotes(props) {
+      useDshLang();
       useEffect(() => ensureCss(), []);
       const input = props.input || null;
       const sessionId = props.sessionId || bridge.sessionId;
@@ -765,7 +828,7 @@ window.__ModuleLoader__.load({
         : null;
       return h("div", { className: "phd-qdock" },
         h("div", { className: "phd-qpanel" },
-          h(QuoteRail, { items, extra: clearBtn, onRemove: (it) => removeQuoteChip(sessionId, it.id) }),
+          h(QuoteRail, { items, extra: clearBtn, onAsk: requestCandidates, onRemove: (it) => removeQuoteChip(sessionId, it.id) }),
         ));
     }
 
@@ -817,9 +880,16 @@ window.__ModuleLoader__.load({
       return busy ? !(status && status.running) : shareSwitchOn(status);
     }
 
+    function shownAddress(frameSrc, liveUrl, label) {
+      if (liveUrl) return liveUrl;
+      if (frameSrc && frameSrc.indexOf("/__ph/embed") === -1) return frameSrc;
+      return label || "";
+    }
     function PreviewPanel() {
+      useDshLang();
       const s = usePreview();
       const [frameKey, setFrameKey] = useState(0);
+      const [liveUrl, setLiveUrl] = useState("");
       const [share, setShare] = useState(null);
       const [shareBusy, setShareBusy] = useState(false);
       const [shareError, setShareError] = useState("");
@@ -847,13 +917,24 @@ window.__ModuleLoader__.load({
           const pane = document.querySelector("iframe.phd-frame");
           if (!pane || e.source !== pane.contentWindow) return;
           const d = e.data;
-          if (!d || d.source !== "page-harness" || d.type !== "ph:quote" || !d.pick) return;
+          if (!d || d.source !== "page-harness") return;
+          if (d.type === "ph:location" && typeof d.url === "string") {
+            setLiveUrl(d.url);
+            return;
+          }
+          if (d.type === "ph:candidate-nav" && typeof d.index === "number") {
+            if (pageCandidate.selector === d.selector) setPageCandidate({ ...pageCandidate, index: d.index });
+            return;
+          }
+          if (d.type !== "ph:quote" || !d.pick) return;
           quoteIntoComposer(d.pick);
         };
         window.addEventListener("message", onMessage);
         return () => window.removeEventListener("message", onMessage);
       }, [origin]);
       const src = frame.src;
+      useEffect(() => { setLiveUrl(""); }, [src]);
+      const address = shownAddress(src, liveUrl, s && s.label);
       let pageUrl = "";
       try { if (src && s) pageUrl = new URL(s.page, s.target).href; } catch { /* ignore */ }
       const shareOn = shareSwitchOn(share);
@@ -877,22 +958,20 @@ window.__ModuleLoader__.load({
       const newTabTitle = shareLink ? tr("newTab") + "\n" + shareLink : pending ? tr("starting") : tr("newTabWait");
       return h("div", { className: "phd-pane" },
         h("div", { className: "phd-bar" },
-          h("div", { className: "phd-title phd-grow phd-ellipsis", title: s && s.label }, tr("preview") + (s && s.label ? " · " + s.label : "")),
-          s && s.starting ? h("span", { className: "phd-badge off" }, tr("starting")) : null,
+          h("div", { className: "phd-url phd-grow phd-ellipsis", title: address }, address || (s && s.starting ? tr("starting") : tr("preview"))),
           src ? h("button", { type: "button", className: "phd-icon", title: tr("reload"), "aria-label": tr("reload"), onClick: () => setFrameKey((k) => k + 1) }, h(Icon, { d: ICON_RELOAD })) : null,
           src ? h("div", { className: "phd-sharebox" },
             h("button", {
-              type: "button", role: "switch", className: "phd-switch" + (pending ? " busy" : ""),
+              type: "button", role: "switch", className: "phd-share" + (pending ? " busy" : ""),
               "aria-checked": switched, "aria-label": tr("share"), title: switched ? tr("shareStop") : tr("share"),
               disabled: pending || (!switched && !pageUrl),
               onClick: toggleShare,
-            }, h("i", { "aria-hidden": "true" }), h("span", null, tr("share"))),
+            }, tr("share")),
             h("button", {
               type: "button", className: "phd-icon", title: newTabTitle, "aria-label": tr("newTab"),
               disabled: !shareLink, onClick: () => window.open(shareLink, "_blank", "noopener"),
             }, h(Icon, { d: ICON_EXTERNAL })),
           ) : null,
-          h("button", { type: "button", className: "phd-icon", title: tr("close"), "aria-label": tr("close"), onClick: closePane }, "×"),
         ),
         shareError ? h("div", { className: "phd-err" }, shareError) : null,
         src
@@ -900,7 +979,7 @@ window.__ModuleLoader__.load({
             key: (s.rev || 0) + ":" + frameKey, className: "phd-frame", src, title: tr("preview"), allow: "clipboard-read; clipboard-write",
             onLoad: (e) => {
               const pane = e.currentTarget;
-              if (pane.contentWindow && origin) pane.contentWindow.postMessage({ source: "page-harness-host", type: "ph:hello" }, origin);
+              if (pane.contentWindow && origin) pane.contentWindow.postMessage({ source: "page-harness-host", type: "ph:hello", lang: phLang() }, origin);
             },
           })
           : h("div", { className: "phd-empty" },
@@ -910,109 +989,18 @@ window.__ModuleLoader__.load({
       );
     }
 
-    /** Pointer drag reporting the panel width implied by the pointer's x; `onTap` fires when it never moved. */
-    // Listens on window, not with pointer capture: dragging the edge tab open unmounts the tab mid-gesture.
-    function useWidthDrag(onWidth, onTap) {
-      const [dragging, setDragging] = useState(false);
-      const cb = React.useRef({ onWidth, onTap });
-      cb.current = { onWidth, onTap };
-      const stop = React.useRef(null);
-      useEffect(() => () => { if (stop.current) stop.current(); }, []);
-      const onPointerDown = (e) => {
-        if (e.button !== 0) return;
-        e.preventDefault();
-        const id = e.pointerId;
-        const x0 = e.clientX;
-        let moved = false;
-        const move = (ev) => {
-          if (ev.pointerId !== id) return;
-          if (!moved && Math.abs(ev.clientX - x0) < 4) return;
-          if (!moved) { moved = true; setDragging(true); }
-          cb.current.onWidth(dockWidth(window.innerWidth - ev.clientX));
-        };
-        const end = (ev) => {
-          if (ev.pointerId !== id) return;
-          cancel();
-          if (ev.type === "pointerup" && !moved && cb.current.onTap) cb.current.onTap();
-        };
-        const cancel = () => {
-          cleanup();
-          setDragging(false);
-        };
-        const cleanup = () => {
-          window.removeEventListener("pointermove", move);
-          window.removeEventListener("pointerup", end);
-          window.removeEventListener("pointercancel", end);
-          window.removeEventListener("blur", cancel);
-          stop.current = null;
-        };
-        if (stop.current) stop.current();
-        stop.current = cleanup;
-        window.addEventListener("pointermove", move);
-        window.addEventListener("pointerup", end);
-        window.addEventListener("pointercancel", end);
-        window.addEventListener("blur", cancel);
-      };
-      return { dragging, handlers: { onPointerDown } };
-    }
-
-    /** Session the user is looking at. DSH 0.2's list has no `current`; the open one is retained by mainView. */
-    function viewedSessionId(st) {
-      if (!st || !st.byId) return "";
-      if (st.current && st.byId[st.current] && st.byId[st.current].blank === false) return st.current;
-      for (const session of Object.values(st.byId)) {
-        if (session && session.blank === false && session.retainedBy && session.retainedBy.mainView > 0) return session.id || "";
-      }
-      return "";
-    }
-
-    function DockHost(props) {
+    function PreviewTab() {
       useEffect(() => ensureCss(), []);
-      const d = useDock();
-      const [, setTick] = useState(0);
-      const anchor = React.useRef(null);
-      const viewed = typeof props.useSessions === "function" ? props.useSessions(viewedSessionId) : "";
-      const hasSession = !!(viewed || currentSession());
-      const open = d.open && hasSession;
-      const width = dockWidth(d.width);
-      useEffect(() => {
-        const onResize = () => setTick((n) => n + 1);
-        window.addEventListener("resize", onResize);
-        return () => window.removeEventListener("resize", onResize);
-      }, []);
-      useEffect(() => {
-        const layer = anchor.current && anchor.current.closest("[data-shell-overlay]");
-        const frame = layer && layer.parentElement;
-        if (!frame) return;
-        frame.style.marginRight = open ? width + "px" : "";
-        return () => { frame.style.marginRight = ""; };
-      }, [open, width]);
-      const resize = useWidthDrag((w) => setDock({ width: w }));
-      const tab = useWidthDrag((w) => setDock({ open: true, width: w }), () => {
-        refreshPreview().catch(() => {});
-        openPane();
-      });
-      const dragging = resize.dragging || tab.dragging;
-      const body = open
-        ? h("aside", { className: "phd-dock" + (dragging ? " dragging" : ""), style: { width: width + "px" }, "aria-label": tr("preview") },
-          h("div", { className: "phd-dock-handle", title: tr("dragResize"), ...resize.handlers }),
-          h(PreviewPanel),
-        )
-        : hasSession
-          ? h("div", { className: "phd-edge" + (dragging ? " dragging" : ""), role: "button", tabIndex: 0, title: tr("dragOpen"), "aria-label": tr("preview"), ...tab.handlers,
-            onKeyDown: (e) => { if (e.key === "Enter" || e.key === " ") openPane(); } }, h(Icon, { d: ICON_PREVIEW }))
-          : null;
-      const place = (node) => node && ReactDOM ? ReactDOM.createPortal(node, document.body) : node;
-      return h(React.Fragment, null,
-        h("span", { ref: anchor, hidden: true }),
-        place(body),
-        place(dragging ? h("div", { className: "phd-drag-shield" }) : null),
-      );
+      return h("div", { className: "phd-tab" }, h(PreviewPanel));
     }
-
+    function PreviewTabTitle() {
+      useDshLang();
+      return tr("preview");
+    }
     function PreviewHeaderButton(props) {
+      useDshLang();
       useEffect(() => ensureCss(), []);
-      const d = useDock();
+      const open = usePreviewOpen();
       const draft = typeof props.useInput === "function" ? props.useInput((st) => st.draft) : "";
       bridge.sessionId = props.sessionId || "";
       bridge.draft = draft || "";
@@ -1025,11 +1013,11 @@ window.__ModuleLoader__.load({
         }
       }, [props.sessionId]);
       const toggle = () => {
-        if (d.open) return closePane();
+        if (open) return closePane();
         refreshPreview().catch(() => {});
         openPane();
       };
-      return h("button", { type: "button", className: "phd-head-btn" + (d.open ? " on" : ""), title: tr("preview"), "aria-pressed": d.open, onClick: toggle },
+      return h("button", { type: "button", className: "phd-head-btn" + (open ? " on" : ""), title: tr("preview"), "aria-pressed": open, onClick: toggle },
         h(Icon, { d: ICON_PREVIEW }), h("span", null, tr("preview")));
     }
 
@@ -1050,6 +1038,7 @@ window.__ModuleLoader__.load({
     }
 
     function PreviewToolView(props) {
+      useDshLang();
       useEffect(() => ensureCss(), []);
       const running = !!(props && props.block && !("kind" in props.block));
       const sawRunning = React.useRef(running);
@@ -1074,6 +1063,105 @@ window.__ModuleLoader__.load({
         ),
         result.error ? h("div", { className: "phd-err" }, result.error) : null,
       );
+    }
+
+    // One candidate set is shown on the preview page at a time. The chat card only switches it.
+    let pageCandidate = { key: "", selector: "", index: 0 };
+    let latestKey = "";
+    let leadToken = 0;
+    function setPageCandidate(next) {
+      pageCandidate = next;
+      emit();
+    }
+    function proposalKey(proposal) {
+      return (proposal.selector || "") + ":" + (proposal.variants || []).map((v) => v.index + ":" + v.label).join("|");
+    }
+    function postCandidate(payload) {
+      const frame = document.querySelector("iframe.phd-frame");
+      const origin = previewOrigin(previewState);
+      if (!frame || !frame.contentWindow || !origin) return;
+      frame.contentWindow.postMessage({ source: "page-harness-host", ...payload }, origin);
+    }
+    function showCandidate(proposal, index) {
+      const variants = proposal.variants || [];
+      const v = variants.find((x) => x.index === index) || variants[0];
+      if (!v) return;
+      openPane();
+      setPageCandidate({ key: proposalKey(proposal), selector: proposal.selector || "", index: v.index });
+      postCandidate({
+        type: "ph:candidate",
+        selector: proposal.selector || "",
+        index: v.index,
+        variants: variants.map((item) => ({ index: item.index, label: item.label, text: item.text || "", style: item.style || "", image: item.image || "" })),
+      });
+    }
+    function clearCandidate(proposal) {
+      if (proposal && pageCandidate.key !== proposalKey(proposal)) return;
+      setPageCandidate({ key: "", selector: "", index: 0 });
+      postCandidate({ type: "ph:candidate", clear: true });
+    }
+    function CandidateCards({ proposal }) {
+      useDshLang();
+      const view = useBus(() => pageCandidate);
+      const latest = useBus(() => latestKey);
+      const key = proposalKey(proposal);
+      const variants = proposal.variants || [];
+      const past = !!latest && latest !== key;
+      const on = view.key === key;
+      const current = on ? view.index : (variants[0] && variants[0].index);
+      const title = tr("candidates") + (proposal.selector ? " · " + shortSelector(proposal.selector) : "");
+      useEffect(() => {
+        const token = ++leadToken;
+        const timer = setTimeout(() => {
+          if (token !== leadToken) return;
+          if (latestKey !== key) {
+            latestKey = key;
+            emit();
+          }
+          if (pageCandidate.key !== key) showCandidate(proposal, variants[0] && variants[0].index);
+        }, 40);
+        return () => clearTimeout(timer);
+      }, [key]);
+      if (past) {
+        return h("div", { className: "phd-live past", "aria-disabled": "true" },
+          h("div", { className: "top" },
+            h("span", { className: "ic" }, "✶"),
+            h("span", { className: "title" }, title),
+          ),
+          h("div", { className: "vars" },
+            variants.map((item) => h("span", { key: item.index, className: "phd-chip" }, item.index + " · " + item.label)),
+          ),
+        );
+      }
+      const step = (d) => {
+        const list = variants.map((x) => x.index);
+        const i = Math.max(0, list.indexOf(current));
+        showCandidate(proposal, list[(i + d + list.length) % list.length]);
+      };
+      return h("div", { className: "phd-live" + (on ? " on" : "") },
+        h("div", { className: "top" },
+          h("span", { className: "ic" }, "✶"),
+          h("span", { className: "title" }, title),
+          h("span", { className: "st" }, on ? tr("onPage") : tr("ready")),
+        ),
+        h("div", { className: "vars" },
+          h("button", { type: "button", className: "phd-btn", onClick: () => step(-1) }, "‹"),
+          variants.map((item) => h("button", {
+            key: item.index, type: "button",
+            className: "phd-btn" + (on && item.index === view.index ? " on" : ""),
+            onClick: () => showCandidate(proposal, item.index),
+          }, item.index + " · " + item.label)),
+          h("button", { type: "button", className: "phd-btn", onClick: () => step(1) }, "›"),
+        ),
+        h("div", { className: "acts" },
+          h("button", { type: "button", className: "phd-btn", onClick: () => clearCandidate(proposal) }, tr("discard")),
+          h("button", { type: "button", className: "phd-btn primary", onClick: () => appendToComposer(adoptDraft(proposal, current)) }, tr("adopt")),
+        ),
+      );
+    }
+    function ProposeToolView() {
+      // Cards render under the reply. The tool row stays folded with the rest of the turn.
+      return null;
     }
 
     // ---------- turn triggers: pages written, scripts changed, servers started ----------
@@ -1105,10 +1193,14 @@ window.__ModuleLoader__.load({
         if (event.type === "tool/result" && event.data && event.data.turn !== undefined) return { id: String(event.data.turn), role: "update" };
         return null;
       },
-      start: (_context, match) => ({ turn: match.event.data.turn, servers: [], previewCalls: [], previewed: false }),
+      start: (_context, match) => ({ turn: match.event.data.turn, servers: [], previewCalls: [], previewed: false, proposals: [] }),
       update: (context, match) => {
         const st = context.state;
         if (match.event.type === "tool/result") {
+          const meta = match.event.data.meta;
+          if (meta && meta.kind === "page-harness-propose" && Array.isArray(meta.variants)) {
+            return { ...st, proposals: [...(st.proposals || []), { seq: match.event.seq, proposal: meta }] };
+          }
           const msg = match.event.data.message;
           const callId = msg && msg.source && String(msg.source.callId);
           if (!callId || !st.previewCalls.includes(callId)) return st;
@@ -1129,7 +1221,7 @@ window.__ModuleLoader__.load({
         kind: "turn",
         turn: context.state.turn,
         key: "pageHarness",
-        value: { servers: context.state.servers, previewed: context.state.previewed },
+        value: { servers: context.state.servers, previewed: context.state.previewed, proposals: context.state.proposals || [] },
       },
     };
 
@@ -1144,12 +1236,14 @@ window.__ModuleLoader__.load({
         if (p.seq <= owner.seq && !all.includes(p.path)) all.push(p.path);
       }
       const servers = ((ours && ours.servers) || []).filter((s) => s.seq <= owner.seq);
+      // The footer sits under the finished reply, so every proposal from this turn belongs on it.
+      const proposals = ((ours && ours.proposals) || []).map((p) => p.proposal);
       const html = all.filter((p) => HTML_FILE.test(p));
       const scripts = all.filter((p) => SCRIPT_FILE.test(p));
-      if (!servers.length && !html.length && !scripts.length) return null;
+      if (!servers.length && !html.length && !scripts.length && !proposals.length) return null;
       const end = turn.end && turn.end.time;
       return {
-        all, html, scripts, servers,
+        all, html, scripts, servers, proposals,
         previewed: !!(ours && ours.previewed),
         key: String(turn.turn) + ":" + owner.seq,
         live: typeof end !== "number" || Date.now() - end < 60000,
@@ -1170,12 +1264,16 @@ window.__ModuleLoader__.load({
 
     // Winning the chain hides ui-deliverables' produced-files row, so this tail repeats it.
     function TurnTail(props) {
+      useDshLang();
       useEffect(() => ensureCss(), []);
-      const m = props.matched || { all: [], html: [], scripts: [], servers: [] };
+      // This seat is a list, so it does not run select. Read the turn here.
+      const m = props.matched || selectTurn(props) || { all: [], html: [], scripts: [], servers: [], proposals: [], previewed: false, key: "", live: false };
       const s = usePreview();
-      const d = useDock();
+      const previewOpen = usePreviewOpen();
       const [busy, setBusy] = useState("");
       const [error, setError] = useState("");
+      const proposals = m.proposals || [];
+      const hasWork = m.servers.length || m.html.length || m.scripts.length;
       const mode = m.servers.length ? "server" : m.html.length ? "html" : "script";
       const named = m.servers.map((x) => x.port).filter(Boolean);
       const detected = useDevServers(mode === "server", named);
@@ -1210,9 +1308,9 @@ window.__ModuleLoader__.load({
       const serverButton = (x) => h("button", { key: x.port, type: "button", className: "phd-btn primary", disabled: !!busy, title: x.title || x.url, onClick: () => go(x.url) },
         busy === x.url ? tr("starting") : tr("preview") + " :" + x.port);
       const startButton = h("button", { key: "start", type: "button", className: "phd-btn primary", disabled: !bridge.inputActions, onClick: () => askAgentToStart(m.scripts) }, tr("startAndPreview"));
-      if (showing) {
+        if (showing) {
         text = tr("tailShowing", { name: showing });
-        if (!d.open) buttons = [h("button", { key: "show", type: "button", className: "phd-btn", onClick: openPane }, tr("showPreview"))];
+        if (!previewOpen) buttons = [h("button", { key: "show", type: "button", className: "phd-btn", onClick: openPane }, tr("showPreview"))];
       } else if (mode === "html") {
         text = tr("tailAsk", { name: m.html.map(name).join("、") });
         buttons = m.html.slice(0, 3).map((p) => h("button", { key: p, type: "button", className: "phd-btn primary", disabled: !!busy, title: p, onClick: () => go(p) },
@@ -1228,13 +1326,16 @@ window.__ModuleLoader__.load({
         text = tr("scriptAsk", { name: m.scripts.slice(0, 3).map(name).join("、") + (m.scripts.length > 3 ? "…" : "") });
         buttons = [startButton];
       }
+      const alreadyShown = !!showing && previewOpen && !buttons.length && !error;
+      if (!proposals.length && (!hasWork || alreadyShown) && !m.all.length) return null;
       return h("div", null,
-        h("div", { className: "phd-tail" },
+        proposals.map((p, i) => h(CandidateCards, { key: (p.selector || "") + ":" + i, proposal: p })),
+        hasWork && !alreadyShown ? h("div", { className: "phd-tail" },
           h(Icon, { d: ICON_PREVIEW }),
           h("span", { className: "phd-grow phd-ellipsis", title: text }, text),
           buttons,
           error ? h("div", { className: "phd-err" }, error) : null,
-        ),
+        ) : null,
         m.all.length && typeof props.openFile === "function" ? h("div", { className: "phd-produced" },
           h("span", null, tr("produced")),
           m.all.slice(0, 8).map((p) => h("button", { key: p, type: "button", className: "phd-chip", title: p, onClick: () => props.openFile(p) }, name(p))),
@@ -1251,8 +1352,7 @@ window.__ModuleLoader__.load({
       if (typeof actions.submit === "function") setTimeout(() => actions.submit(), 0);
     }
 
-    const inject = ["slots"];
-    let ReactDOM = null;
+    const inject = ["slots", "uiConversation", "sidebarRight", "sidebarRightTabs"];
     function registerSlot(slots, options, component) {
       const next = { ...options };
       if (next.id == null && next.key != null) next.id = String(next.key);
@@ -1262,11 +1362,17 @@ window.__ModuleLoader__.load({
     function apply(ctx) {
       const slots = ctx.slots;
       if (!slots) return;
-      try { ReactDOM = require("react-dom"); } catch { ReactDOM = null; }
       ctx.effect(() => {
         ensureCss();
         return () => {};
       }, "page-harness-style");
+      ctx.effect(() => {
+        publishLang();
+        if (typeof MutationObserver === "undefined" || typeof document === "undefined") return () => {};
+        const obs = new MutationObserver(() => publishLang());
+        obs.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
+        return () => obs.disconnect();
+      }, "page-harness-lang");
       for (const key of ["page_harness_share", "page_harness_status"]) {
         slots.inject("tool.call.toolview", () => registerSlot(slots, { name: "tool.call.toolview", key }, ToolView));
       }
@@ -1279,17 +1385,38 @@ window.__ModuleLoader__.load({
         sessions = c.sessions;
         c.effect(() => () => { sessions = null; }, "page-harness-sessions");
       });
-      slots.inject("shell.overlay", () => registerSlot(slots, { name: "shell.overlay", id: "page-harness-dock" }, DockHost));
+      sidebarRight = ctx.sidebarRight;
+      ctx.effect(() => () => { sidebarRight = null; }, "page-harness-sidebar");
+      ctx.effect(() => ctx.sidebarRightTabs.register({
+        id: PREVIEW_TAB_ID,
+        kind: PREVIEW_KIND,
+        priority: "extension",
+        keepMounted: true,
+        title: () => isZh() ? "预览" : "Preview",
+        guide: [{
+          id: "preview",
+          order: 15,
+          title: () => isZh() ? "预览" : "Preview",
+          description: () => isZh() ? "在右侧查看正在开发的页面" : "Show the page you are building",
+        }],
+      }), "page-harness-tab-type");
+      ctx.effect(() => slots.inject("sidebar.right.pane.tab", () => slots.register({
+        name: "sidebar.right.pane.tab",
+        key: PREVIEW_TAB_ID,
+      }, PreviewTab)), "page-harness-tab-body");
+      ctx.effect(() => slots.inject("sidebar.right.pane.tab.title", () => slots.register({
+        name: "sidebar.right.pane.tab.title",
+        key: PREVIEW_TAB_ID,
+      }, PreviewTabTitle)), "page-harness-tab-title");
       slots.inject("conversation.session.header.actions", () => registerSlot(
         slots,
         { name: "conversation.session.header.actions", id: "page-harness-preview", order: 50 },
         PreviewHeaderButton,
       ));
-      ctx.inject(["conversationEvents"], (c) => {
-        c.conversationEvents.register(turnDefinition);
-      });
+      ctx.uiConversation.events.register(turnDefinition);
       slots.inject("conversation.chat.turnTail", () => slots.register({ name: "conversation.chat.turnTail", id: "page-harness-turn", priority: -10, select: selectTurn }, TurnTail));
       slots.inject("tool.call.toolview", () => registerSlot(slots, { name: "tool.call.toolview", key: "page_harness_preview" }, PreviewToolView));
+      slots.inject("tool.call.toolview", () => registerSlot(slots, { name: "tool.call.toolview", key: "page_harness_propose" }, ProposeToolView));
       slotsRef = slots;
       ctx.inject(["inputTriggers"], (c) => {
         c.effect(() => c.inputTriggers.registerSource({
@@ -1303,6 +1430,27 @@ window.__ModuleLoader__.load({
         }), "page-harness-quote-source");
       });
       slots.inject("conversation.input.dock", () => slots.register({ name: "conversation.input.dock", id: "page-harness-quotes", order: 30 }, ComposerQuotes));
+      slots.inject("conversation.user.text.node", () => slots.register({
+        name: "conversation.user.text.node",
+        key: "page-element",
+      }, PageElementChip));
+      ctx.effect(() => ctx.uiConversation.userText.register({
+        id: "page-element",
+        order: -20,
+        match(text, from) {
+          const start = text.indexOf("<page-element", from);
+          if (start < 0) return;
+          const m = /^<page-element\b([^>]*)>\n?([\s\S]*?)\n?<\/page-element>/.exec(text.slice(start));
+          if (!m) return;
+          const q = parseQuote(m[1], m[2]);
+          return {
+            id: "page-element",
+            start,
+            end: start + m[0].length,
+            data: { selector: q.selector, tag: q.tag, text: q.text, url: q.url },
+          };
+        },
+      }), "page-harness-element-text");
       for (const key of ["user", "steering"]) {
         const renderer = quotedNodeRenderer(key);
         slots.inject("conversation.chat.node", () => slots.register({ name: "conversation.chat.node", key, priority: -10, locale: "conversation" }, renderer));

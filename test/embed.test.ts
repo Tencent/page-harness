@@ -40,6 +40,8 @@ describe('--embed-origin', () => {
   it.skipIf(!built)('tells the overlay which parents may receive quotes', async () => {
     const js = await (await fetch(`http://127.0.0.1:${appPort}/__ph/overlay.js`)).text()
     expect(js).toContain(`"embed":["${EMBED}"]`)
+    expect(js).toContain('ph:candidate')
+    expect(js).toContain('ph:location')
   })
 
   it.skipIf(!built)('lets the panel iframe load inside the embedder', async () => {
