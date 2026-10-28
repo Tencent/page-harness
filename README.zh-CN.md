@@ -328,10 +328,13 @@ team.json                   邀请 token、签名密钥和评审者名字（权�
 | [安全模型](#安全模型) | 哪些地方锁住了，怎么锁的 |
 | [数据](#数据) | `.page-harness/` 里存了什么 |
 | [常见问题](#常见问题) | 大家常问的 |
+| [开发说明](./docs/development.md) | 仓库地图、命令和开发约定 |
 | [官网](https://cocofhu.github.io/page-harness-site/) | 产品演示与安装 |
 | [npm 包](https://www.npmjs.com/package/page-harness) | 已发布的版本 |
 
 ## 开发
+
+贡献说明见 [docs/development.md](./docs/development.md)，改代码时的约束见 [AGENTS.md](./AGENTS.md)。
 
 ```bash
 npm install

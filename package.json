@@ -26,8 +26,10 @@
     "dist",
     "README.md",
     "README.zh-CN.md",
+    "AGENTS.md",
     "LICENSE",
     "THIRD_PARTY_LICENSES.md",
+    "docs/*.md",
     "docs/*.svg",
     "docs/*.png",
     "docs/*.webp"
