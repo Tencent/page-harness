@@ -328,10 +328,13 @@ Delete `<project>/.page-harness/`.
 | [Security model](#security-model) | What is locked down and how |
 | [Data](#data) | What is stored in `.page-harness/` |
 | [FAQ](#faq) | Common questions |
+| [Development](./docs/development.md) | Repository map, commands, and conventions |
 | [Homepage](https://cocofhu.github.io/page-harness-site/) | Product tour and install |
 | [npm package](https://www.npmjs.com/package/page-harness) | Released versions |
 
 ## Development
+
+Contributor guide: [docs/development.md](./docs/development.md). Agent notes: [AGENTS.md](./AGENTS.md).
 
 ```bash
 npm install
