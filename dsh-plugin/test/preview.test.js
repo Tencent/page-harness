@@ -105,25 +105,11 @@ describe('PreviewManager', () => {
     assert.equal(manager.status().running, false)
   })
 
-  it('opens a direct preview without the CLI and upgrades when it becomes available', async () => {
-    manager = new PreviewManager()
-    const missing = path.join(project, 'nope.js')
-    const direct = await manager.start({ ...base, target: '5173', cliPath: missing, share: false })
-    assert.equal(direct.running, true)
-    assert.equal(direct.direct, true)
-    assert.equal(direct.appUrl, 'http://localhost:5173/')
-    assert.match(direct.notice, /CLI not found/)
-    assert.equal(manager.child, null)
-    const full = await manager.start({ ...base, target: '5173', cliPath, share: false })
-    assert.equal(full.running, true)
-    assert.equal(full.direct, undefined)
-    assert.ok(full.pid)
-  })
-
-  it('rejects a missing project or a missing CLI for sharing', async () => {
+  it('rejects a missing project or a missing CLI', async () => {
     manager = new PreviewManager()
     await assert.rejects(manager.start({ ...base, target: '5173', project: path.join(project, 'nope') }), /project directory not found/)
     await assert.rejects(manager.start({ ...base, target: '5173', cliPath: path.join(project, 'nope.js') }), /CLI not found/)
+    await assert.rejects(manager.start({ ...base, target: '5173', cliPath: path.join(project, 'nope.js'), share: false }), /CLI not found/)
   })
 })
 

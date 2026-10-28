@@ -72,7 +72,6 @@ const runKey = (o) => JSON.stringify([
   o.port,
   o.publicScheme ?? 'http',
   !!o.withAgent,
-  !!o.direct,
 ])
 
 export class PreviewManager {
@@ -117,34 +116,12 @@ export class PreviewManager {
     const port = Number(o.port)
     if (!Number.isInteger(port) || port < 1 || port > 65534) throw new Error('port must be between 1 and 65534 (the control port is port + 1)')
     const run = { ...o, target, project, port, host: o.host || '0.0.0.0' }
-    const cli = resolveCli(o.cliPath)
-    const keyed = { ...run, direct: !cli && !run.share }
-    if (this.info && this.info.key === runKey(keyed)) return this.status()
+    if (this.info && this.info.key === runKey(run)) return this.status()
     await this.stop()
-    if (!cli && run.share) throw new Error('page-harness CLI not found: run npm run build in the page-harness repo, or set cliPath')
+    const cli = resolveCli(o.cliPath)
+    if (!cli) throw new Error('page-harness CLI not found: run npm run build in the page-harness repo, or set cliPath')
     this.error = ''
-    if (keyed.direct) {
-      const app = new URL(target)
-      this.info = {
-        appUrl: target,
-        controlUrl: null,
-        shareUrl: null,
-        mode: 'direct',
-        noAgent: true,
-        version: null,
-        pid: null,
-        direct: true,
-        notice: 'page-harness CLI not found; showing the page directly without Pick, Notes, or sharing. Run npm run build in the page-harness repo, or set cliPath, for the full preview.',
-        key: runKey(keyed),
-        target,
-        project,
-        port: Number(app.port) || (app.protocol === 'https:' ? 443 : 80),
-        controlPort: null,
-        startedAt: Date.now(),
-      }
-      return this.status()
-    }
-    this.pending = this.launch(cli, keyed)
+    this.pending = this.launch(cli, run)
     let retry = null
     try {
       await this.pending

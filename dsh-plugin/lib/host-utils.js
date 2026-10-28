@@ -22,11 +22,6 @@ export function renderPreview(s) {
   }
   if (s?.waitingForPage) return '预览已准备好，用户打开 DSH 页面后会显示在右侧。对用户只说一句即可。'
   if (!s?.running) return `预览没有打开${s?.error ? `：${s.error}` : '。'}`
-  if (s.direct) return [
-    `已在右侧直接预览：${s.label}`,
-    '未安装 page-harness CLI，当前只有页面显示，取点、批注和分享不可用；用户可以在右栏选择新标签打开页面。',
-    '构建 CLI 或设置 cliPath 后再次预览即可恢复完整功能。对用户只说一句即可，不要贴链接或命令。',
-  ].join('\n')
   return [
     `已在右侧预览：${s.label}`,
     '用户可以在预览里取点并引用到对话，或留意见；需要按意见修改时调用 page_harness_notes。',
