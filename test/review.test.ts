@@ -409,5 +409,9 @@ describe.skipIf(!lanIp)('sharing on the network', () => {
     expect((await fetch(`${control}/__ph/history`, { headers: { Cookie: cookie } })).status).toBe(403)
     // The local machine stays the owner without any link.
     expect((await fetch(`http://localhost:${appPort}/`)).status).toBe(200)
+    // Reviewers can curl the control port, so they must not get the resolve secret.
+    expect(await (await fetch(`${app}/__ph/overlay.js`, { headers: { Cookie: cookie } })).text()).not.toContain(h.resolveToken)
+    const ownerJs = await fetch(`http://localhost:${appPort}/__ph/overlay.js`)
+    if (ownerJs.status === 200) expect(await ownerJs.text()).toContain(h.resolveToken)
   })
 })

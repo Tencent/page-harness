@@ -385,11 +385,7 @@ function registerReviewTools(server: McpServer, host: ToolHost, scope: McpScope,
       guard(() => {
         const items = host.review.list().filter((i) => !open_only || i.status === 'open')
         const approvals = host.review.snapshot().approvals.map((a) => `${a.path}: ${a.status === 'approved' ? 'approved' : 'changes requested'} by ${a.author.name}`)
-        const text = reviewListText(
-          items,
-          approvals,
-        )
-        return ok(text)
+        return ok(reviewListText(items, approvals))
       })(),
   )
   server.registerTool(

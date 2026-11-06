@@ -11,7 +11,7 @@ import type { AgentRegistry } from '../agents'
 import type { ClientMsg, Lang, ReviewDraft, ReviewItem, ReviewLook, ServerMsg } from '../shared/protocol'
 import { normalizeHost } from '../shared/paths'
 import { REVIEW_DATA_NOTICE, REVIEW_PAGE_SIZE, reviewMarkdown, reviewPrompt } from '../shared/review-read'
-import { embedNext, safeEqual } from './auth'
+import { embedNext, isLoopback, safeEqual } from './auth'
 import { HOME_CSS, HOME_JS, homeFontFile, homeHtml, packageVersion } from './homePage'
 import { newId } from '../shared/util'
 import type { ArtifactStore } from './artifacts'
@@ -204,7 +204,7 @@ export async function startServers(o: AppOptions): Promise<Servers> {
       if (!existsSync(p)) return send(res, 503, `/* page-harness: ${file} missing, run npm run build */`, 'text/javascript')
       let body = readFileSync(p, 'utf8')
       if (file === 'overlay.js') {
-        body = `window.__PH_CONFIG=${JSON.stringify({ controlOrigin: controlOrigin(req), appPort: o.appPort, target: o.target.host, relay: proxy.site, resolveToken: o.resolveToken, ...(o.noAgent ? { noAgent: true } : {}), ...(o.lang ? { lang: o.lang } : {}), ...(embedOrigins.length ? { embed: embedOrigins } : {}) })};\n` + body
+        body = `window.__PH_CONFIG=${JSON.stringify({ controlOrigin: controlOrigin(req), appPort: o.appPort, target: o.target.host, relay: proxy.site, ...(isLoopback(req) ? { resolveToken: o.resolveToken } : {}), ...(o.noAgent ? { noAgent: true } : {}), ...(o.lang ? { lang: o.lang } : {}), ...(embedOrigins.length ? { embed: embedOrigins } : {}) })};\n` + body
       }
       return send(res, 200, body, 'text/javascript; charset=utf-8', { 'Cross-Origin-Resource-Policy': 'same-origin' })
     }
@@ -276,7 +276,7 @@ export async function startServers(o: AppOptions): Promise<Servers> {
       }
       if (o.bookmarklet && (p === '/' || p === '/__ph' || p === '/__ph/' || p === '/__ph/home') && req.method === 'GET') {
         o.auth.issuePageSession(req, res)
-        return send(res, 200, homeHtml({ token: o.bookmarkletToken ?? '', resolveToken: o.resolveToken, version: packageVersion(), lang: o.lang }), 'text/html; charset=utf-8', {
+        return send(res, 200, homeHtml({ token: o.bookmarkletToken ?? '', version: packageVersion(), lang: o.lang }), 'text/html; charset=utf-8', {
           'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
           'Referrer-Policy': 'no-referrer',
         })
