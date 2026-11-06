@@ -56,6 +56,8 @@ jobs:
           cache-dependency-path: dsh-plugin/package-lock.json
       - run: npm ci
         working-directory: dsh-plugin
+      - run: npm run check
+        working-directory: dsh-plugin
       - run: npm test
         working-directory: dsh-plugin
       - run: npm pack --dry-run

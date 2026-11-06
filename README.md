@@ -30,7 +30,7 @@ https://github.com/user-attachments/assets/113f12e7-c287-45d2-9f27-cb9158c539b2
 
 **Turn any running web page into a workspace for your coding agent.**
 
-Click the thing you want changed and tell your agent what to do, right on the page: Pick, Chat and Artifacts, driven by the agent CLI already on your machine (Claude Code, Codex, Cursor Agent, CodeBuddy Code, OpenCode). For feedback only, `--no-agent` keeps just Pick and Notes; run it with no URL and you get a home page with a **✦ Page-Harness** bookmarklet that works on any site.
+Start with one command—no project config changes, no extra accounts or API keys. Click the element you want changed on the live page to talk to your agent (Pick, Chat, Live candidates, and Artifacts), edit text and styles inline with a live preview, or pass `--share` so teammates can leave notes and approvals on the same page in real time. Behind the scenes it drives the agent CLI already on your machine (Claude Code, Codex, Cursor Agent, CodeBuddy Code, OpenCode), or embeds directly into the right pane of [DeepSeek Harness](./dsh-plugin/README.md). For feedback only, `--no-agent` keeps just Pick and Notes; run it with no URL and you get a home page with a **✦ Page-Harness** bookmarklet that works on any site.
 
 Describing UI in a terminal is painful: "the second button in the card on the left, make it a bit softer". With page-harness you just click the thing on the page and talk to your agent right there. It writes the code, your dev server reloads, you see the result on the same page.
 
@@ -40,6 +40,7 @@ One line. Point it at your dev server:
 
 ```bash
 npx page-harness http://localhost:5173 --project ./my-app
+npx page-harness http://localhost:5173 --share      # team review: invite link for teammates
 npx page-harness --no-agent http://localhost:5173   # review only: Pick and Notes, no agent CLI
 npx page-harness                                    # no URL: home page with a bookmarklet
 ```
@@ -50,27 +51,27 @@ Open **http://127.0.0.1:17990**. That is your app as usual, plus a dock in the b
 - The target can be a bare port (`3000`), `host:port` or a full URL. HMR (Vite, webpack, Next.js…) keeps working through the proxy.
 - No sandbox, no accounts, no changes to your app. Everything stays in `<project>/.page-harness/`.
 
-| Service | URL |
-|---|---|
-| Your app + dock | `http://127.0.0.1:17990` |
-| Panel / API (control port) | `http://127.0.0.1:17991` |
-| Chat history | `http://127.0.0.1:17991/__ph/history` |
-| Bookmarklet home (no URL) | `http://127.0.0.1:17991` |
-
 ### Other ways to run
 
 | Option | When to use it |
 |---|---|
-| `npx page-harness <url>` | The standard setup above: your app behind the proxy, with Pick, Chat and Artifacts driven by an agent CLI |
-| `--no-agent <url>` | Feedback only: Pick and Notes, no agent CLI needed ([details](#review-only---no-agent)) |
+| `npx page-harness <url>` | The standard setup above: your app behind the proxy, with Pick, Chat, Live candidates and Artifacts driven by an agent CLI |
+| `--share` | Teammates on your network join as reviewers with a link, leave notes, edit inline and approve ([details](#team-review---share)) |
+| `--no-agent <url>` | Feedback & inline edits only: Pick and Notes, no agent CLI needed ([details](#review-only---no-agent)) |
 | no URL | A home page with the **✦ Page-Harness** bookmarklet, to leave notes on any site without a proxy ([details](#bookmarklet-no-url)) |
-| `--share` | Teammates on your network join as reviewers with a link ([details](#team-review---share)) |
+| `dsh plugin --profile web add page-harness-dsh` | Embed the running page in the right pane of DeepSeek Harness, pick elements into chat, and share with teammates ([details](./dsh-plugin/README.md)) |
 
 ## Product tour
 
-### Review only
+### DeepSeek Harness right-pane preview
 
-**Pick and Notes, nothing else.** With `--no-agent` no agent CLI is started. Pick an element, leave a comment or an edit, reply, resolve and approve per page. [Details →](#review-only---no-agent)
+**Preview beside your chat.** With [`page-harness-dsh`](./dsh-plugin/README.md), the page opens in a resizable right pane inside DeepSeek Harness: pick elements straight into the prompt box, leave notes on the page, and share the preview with teammates.
+
+<p align="center"><img src="./docs/dsh-preview-light.png" width="720" alt="DeepSeek Harness right-pane preview"></p>
+
+### Review only & inline editing
+
+**Pick, edit inline, and leave notes.** With `--no-agent` no agent CLI is started. Pick an element, leave a comment or edit its text and styles in place with a live preview, reply, resolve and approve per page. [Details →](#review-only---no-agent)
 
 <p align="center"><img src="https://cdn.jsdelivr.net/npm/page-harness@0.1.10/docs/review-only.png" width="720" alt="Page notes panel in review-only mode"></p>
 
@@ -95,15 +96,16 @@ Open **http://127.0.0.1:17990**. That is your app as usual, plus a dock in the b
 ## How it works
 
 ```text
-browser ──► :17990  app port      reverse proxy to your dev server; injects /__ph/overlay.js into HTML
-        └─► :17991  control port  panel UI, history page, JSON API, WebSocket, MCP endpoint
-                       │
-                       └─ spawns the agent CLI per turn (claude -p / codex app-server / cursor-agent -p /
-                          codebuddy -p / opencode run --format json)
-                          with a local MCP server for page_*, artifacts, questions and Live
+Running web page ──► In-page dock (Pick / Inline edit / Notes / Chat / Artifacts)
+                          │
+                          ▼
+             Local coding agent CLI (Claude Code / Codex / Cursor / CodeBuddy / OpenCode)
+                          │
+                          ▼
+             Edits source or renders Live variants ──► Instant HMR preview & team review
 ```
 
-- The overlay lives in a Shadow DOM so its styles and your app's styles do not leak into each other. The chat and artifacts windows are iframes from the control port and talk to the page over a `MessagePort` handshake.
+- The overlay lives in a Shadow DOM so its styles and your app's styles do not leak into each other.
 - Each chat keeps the agent's session id, so follow-up messages resume the same agent session. Messages sent while a turn runs are queued per chat.
 - Agents get a short system prompt describing the page context, the MCP tools and the Live protocol. Nothing is written to your project except `.page-harness/` (ignored by git through its own `.gitignore`) and, during Live, temporary candidate markup.
 
@@ -271,7 +273,7 @@ There is no login: it is a local developer tool and binds to `127.0.0.1` by defa
 - **Two origins.** Your app (and any script on it) runs on the app port; the panel, API and agent endpoints are on the control port, so page scripts cannot read them.
 - **Owner and reviewers.** Without `--share` only this machine can connect and everything behaves as one user. With `--share`, the owner session is only issued to loopback requests; other machines need the invite link, which sets signed (HMAC) reviewer cookies for the panel and the app port; without them both ports answer `403`. Reviewers are limited to the review actions on the WebSocket and to reading artifacts; everything else returns `403`. Name the owner in Settings → Team.
 - **Session cookie.** The panel gets an `HttpOnly`, `SameSite=Strict` cookie scoped to `/__ph`; the cookie is stripped before requests are forwarded to your dev server.
-- **API.** Reads require a same-origin `Sec-Fetch-Site`; writes require a matching `Origin` plus a custom `X-PH` header. The WebSocket checks the cookie and `Origin`. The bookmarklet is the exception: cross-origin review reads and writes need the per-run `X-PH-Token`, and the response reflects that page's `Origin` (never `*`). `GET /__ph/api/review` stays callable from curl without CORS headers. `POST /__ph/api/review/resolve` is separate: it marks a note as the local agent, and it accepts only this run's `X-PH-Resolve` header with `Content-Type: application/json`. Requests that carry a browser `Origin` are rejected. The owner copy of the prompt includes the header; a prompt fetched without an owner session does not. Review text handed to the agent is labeled as untrusted page data.
+- **API.** Reads require a same-origin `Sec-Fetch-Site`; writes require a matching `Origin` plus a custom `X-PH` header. The WebSocket checks the cookie and `Origin`. The bookmarklet is the exception: cross-origin review reads and writes need the per-run `X-PH-Token`, and the response reflects that page's `Origin` (never `*`). `GET /__ph/api/review` stays callable from curl without CORS headers. `POST /__ph/api/review/resolve` is the local agent's endpoint: it accepts only this run's `X-PH-Resolve` header with `Content-Type: application/json`, and it refuses browsers (`Origin`), cross-site requests and session cookies with `403`. The owner copy of the prompt includes the header; a prompt fetched without an owner session does not. Review text handed to the agent is labeled as untrusted page data.
 - **MCP.** Every agent turn gets its own bearer token (passed through an environment variable or a private temp file, never on the command line) that is revoked when the turn ends. Browser requests to the MCP endpoint are rejected.
 - **Host allow-list.** Requests with unexpected `Host` headers get `421` (DNS rebinding). Add names with `--allow-host` if you expose it on a LAN.
 - **Framing.** The panel may only be framed by the app origin; the history page cannot be framed at all.
@@ -326,10 +328,13 @@ Delete `<project>/.page-harness/`.
 | [Security model](#security-model) | What is locked down and how |
 | [Data](#data) | What is stored in `.page-harness/` |
 | [FAQ](#faq) | Common questions |
+| [Development](./docs/development.md) | Repository map, commands, and conventions |
 | [Homepage](https://cocofhu.github.io/page-harness-site/) | Product tour and install |
 | [npm package](https://www.npmjs.com/package/page-harness) | Released versions |
 
 ## Development
+
+Contributor guide: [docs/development.md](./docs/development.md). Agent notes: [AGENTS.md](./AGENTS.md).
 
 ```bash
 npm install
@@ -338,12 +343,10 @@ node dist/cli.js http://localhost:5173 --project ../some-app
 
 npm run lint
 npm run typecheck
-npm test               # unit + server integration tests (scripted agent)
+npm test               # unit + server integration tests
 npx playwright install chromium
 npm run build && npm run test:e2e   # browser tests against a fixture app
 ```
-
-`PH_FAKE_AGENT=1` adds a scripted `fake` agent used by the tests; it drives the real MCP endpoint, so the whole pipeline is exercised without an LLM.
 
 ## Contributing
 

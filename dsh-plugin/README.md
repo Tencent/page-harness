@@ -1,9 +1,11 @@
 # page-harness-dsh
 
-DeepSeek Harness 插件，两个功能：
+把正在运行的网页嵌进 DeepSeek Harness 对话右侧，支持**取点引用、在线编辑批注、一键团队分享评审**：
 
-- **右栏预览**：Agent 写完网页后，对话右侧直接显示页面，上面带 page-harness 的取点和意见。取点后点「引用到对话」，元素的选择器、文字和 HTML 会填进输入框。
-- **分享预览**：一键启动 page-harness 分享预览。同事打开分享链接，就能在正在运行的页面上取点、留意见、审批。
+- **右栏实时预览**：Agent 写完网页、改完脚本或启动开发服务后，对话右侧直接显示页面（宽度可自由拖拽，不遮挡对话）。在页面上点选元素即可一键「引用到对话」，也可以原地改样式、钉批注，然后对 Agent 说一句「按意见改」自动完成修改。
+- **团队分享预览**：拨动预览栏顶部的分享开关，或直接对 Agent 说「把 5173 分享给同事看看」，即可生成安全分享链接。同事打开链接就能在页面上取点、在线改样式、留意见和审批。
+
+<p align="center"><img src="../docs/dsh-preview-light.png" width="720" alt="DeepSeek Harness 对话右侧预览页面"></p>
 
 ## 安装
 
@@ -18,7 +20,7 @@ npm ci && npm run build
 dsh plugin --profile web add /absolute/path/to/page-harness/dsh-plugin
 ```
 
-重启 `dsh web`，强制刷新浏览器。插件会优先使用同一仓库的 `dist/cli.js`；也可以在设置里填 `cliPath`。
+重启 `dsh web`，强制刷新浏览器。通过 npm 安装插件时会自动安装 `page-harness` CLI 依赖，无需另外全局安装。插件会优先使用同一仓库的 `dist/cli.js`，其次使用依赖包里的 CLI；也可以在设置里填 `cliPath`。
 
 ## 右栏预览
 
@@ -28,9 +30,9 @@ dsh plugin --profile web add /absolute/path/to/page-harness/dsh-plugin
 - 某一轮改了脚本（js/ts/vue/svelte/css/py/package.json 等）时，会问「改了 xxx，要开启预览吗？」，点 **启动服务并预览**，Agent 会启动开发服务并在右侧预览。
 - 启动不能保证一次成功。插件先请求这个地址：通了才打开预览。纯静态站点由插件自己提供，不经过 Agent。需要 dev server 时，插件不会猜命令，只把**一条命令和一个目录**交给 Agent；Agent 跑完后用同一个地址再调一次，插件确认端口真的通了才打开。端口被占用时，预览会自动改用下一对端口再试一次。
 - 让 Agent 启动服务（`npm run dev`、`vite`、`python -m http.server`、`flask run`、`uvicorn`、`node server.js` 等）时，按上面的结果执行；万一它没打开预览，这一轮结束时插件找到对应端口就自动打开，找不到就在对话里提示。
-- 会话标题栏的 **预览** 按钮开关右栏；没有预览时右栏里会列出本机的 dev server，也可以输入文件路径（如 `index.html`）或端口。
-- 右栏宽度随意拖：拖右栏左边缘调宽度（会记住），对话区跟着变窄，不会被遮住。关掉后屏幕右边缘留一个小把手，点它或向左拖就能打开。
+- 会话标题栏的 **预览** 按钮开关 DSH 右侧边栏里的「预览」页签。页签标题是「预览」，完整地址只出现在预览栏里。没有预览时，页签里会列出本机的 dev server，也可以输入文件路径（如 `index.html`）或端口。
 - 预览里点 **取点** 选中元素，再点 **引用到对话**，内容会追加到输入框；点 **意见** 留批注，之后说「按意见改」，Agent 会调用 `page_harness_notes` 读取并修改。
+- 对引用的元素说「给几个候选」，Agent 会调用 `page_harness_propose`，在对话里列出 2–4 版（文案、样式或图片），此时不改文件。点某一版的 **采用**，这句话会写进输入框；Agent 再按这一版改源码，并调用 `page_harness_preview` 刷新。
 
 预览用 `previewPort`（默认 `17994`）和 `previewPort + 1`，静态文件服务只监听 `127.0.0.1`，优先用 `previewPort + 2`。iframe 地址是「浏览器访问 DSH 用的主机名 + 这两个端口」：
 
@@ -52,6 +54,7 @@ page-harness 只允许 DSH 页面的源（第一次调用插件接口时记录�
 | 工具 | 作用 |
 | --- | --- |
 | `page_harness_preview` | 在右栏预览网页（`path`，默认 `index.html`；或 `url`）。再次调用会刷新 |
+| `page_harness_propose` | 为一个取到的元素记下 2–4 个候选（文案、样式或图片），不改文件。用户点采用后再改源码并刷新预览 |
 | `page_harness_notes` | 读取预览上未解决的意见 |
 | `page_harness_share` | 启动分享预览（`url`，可选 `project`，默认当前会话的工作目录）。同一页面重复调用会复用 |
 | `page_harness_status` | 查看是否在运行和分享链接 |

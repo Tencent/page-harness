@@ -1,5 +1,5 @@
 // Internal authentication. Users never log in; every internal channel is still checked:
-//   browser (panel / history)  -> ph cookie (HttpOnly, SameSite=Strict) + Origin + Sec-Fetch-Site + X-PH header on writes
+//   browser (panel / history)  -> ph cookie (HttpOnly; Partitioned on loopback and https, otherwise SameSite=Strict) + Origin + Sec-Fetch-Site + X-PH header on writes
 //   agent CLI                  -> per-turn Bearer token on /__ph/mcp only, never accepted from browsers
 //   every request              -> Host header allow-list (DNS rebinding)
 import { randomBytes, timingSafeEqual } from 'node:crypto'
@@ -57,6 +57,10 @@ export interface Who {
 }
 
 const LOOPBACK = new Set(['127.0.0.1', '::1', '::ffff:127.0.0.1'])
+
+function isLoopbackBind(host: string): boolean {
+  return host === 'localhost' || LOOPBACK.has(host)
+}
 
 export function isLoopback(req: IncomingMessage): boolean {
   return LOOPBACK.has(req.socket.remoteAddress ?? '')
@@ -126,8 +130,17 @@ export class Auth {
     return !!this.opts.team?.enabled
   }
 
+  /**
+   * Panel session. SameSite=Strict is discarded when DSH (127.0.0.1) frames the localhost
+   * panel, so the WebSocket never gets a session and the overlay stays on "Lost connection".
+   * Loopback and https use a partitioned cookie, which the browser keeps in that iframe.
+   * Plain HTTP on a public host stays Strict: a Secure cookie would not be stored there.
+   */
   private setCookie(res: ServerResponse, value: string): void {
-    res.appendHeader('Set-Cookie', `${this.cookieName}=${value}; Path=/__ph; HttpOnly; SameSite=Strict${this.secureAttr}${value === this.uiSecret ? '' : '; Max-Age=31536000'}`)
+    const persistent = value === this.uiSecret ? '' : '; Max-Age=31536000'
+    const partitioned = this.scheme === 'https' || isLoopbackBind(this.opts.host)
+    const sameSite = partitioned ? '; SameSite=None; Secure; Partitioned' : `; SameSite=Strict${this.secureAttr}`
+    res.appendHeader('Set-Cookie', `${this.cookieName}=${value}; Path=/__ph; HttpOnly${sameSite}${persistent}`)
   }
 
   /**
@@ -224,6 +237,17 @@ export class Auth {
 
   revokeMcpToken(token: string): void {
     this.mcpTokens.delete(token)
+  }
+
+  /**
+   * Browser half of `POST /__ph/api/review/resolve`. Curl has no Origin and no session cookie.
+   * The per-run `X-PH-Resolve` secret is checked separately; this only keeps pages out.
+   */
+  checkLocalAgent(req: IncomingMessage): string | null {
+    if (req.headers.origin) return 'browsers may not call the local agent API'
+    if (req.headers['sec-fetch-site'] === 'cross-site') return 'cross-site requests are not accepted here'
+    if (req.headers.cookie && parseCookies(req.headers.cookie)[this.cookieName]) return 'session cookies are not accepted here'
+    return null
   }
 
   /** MCP endpoint: agent CLIs only. */

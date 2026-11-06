@@ -105,10 +105,11 @@ describe('PreviewManager', () => {
     assert.equal(manager.status().running, false)
   })
 
-  it('rejects a missing project or CLI', async () => {
+  it('rejects a missing project or a missing CLI', async () => {
     manager = new PreviewManager()
     await assert.rejects(manager.start({ ...base, target: '5173', project: path.join(project, 'nope') }), /project directory not found/)
     await assert.rejects(manager.start({ ...base, target: '5173', cliPath: path.join(project, 'nope.js') }), /CLI not found/)
+    await assert.rejects(manager.start({ ...base, target: '5173', cliPath: path.join(project, 'nope.js'), share: false }), /CLI not found/)
   })
 })
 

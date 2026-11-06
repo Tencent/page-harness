@@ -25,8 +25,12 @@ beforeAll(async () => {
   h = await startHarness({ target: new URL(target.url), project, host: '127.0.0.1', appPort, controlPort, agent: 'fake' })
   control = `http://localhost:${controlPort}`
   const r = await fetch(`${control}/__ph/ui`)
-  cookie = (r.headers.get('set-cookie') ?? '').split(';')[0]
+  const setCookie = r.headers.get('set-cookie') ?? ''
+  cookie = setCookie.split(';')[0]
   expect(cookie).toMatch(/^__ph_\d+=/)
+  expect(setCookie).toContain('SameSite=None')
+  expect(setCookie).toContain('Secure')
+  expect(setCookie).toContain('Partitioned')
 })
 
 afterAll(async () => {
