@@ -61,6 +61,8 @@ export interface Harness {
   embedToken?: string
   /** Secret the bookmarklet sends so other websites cannot call the review API. */
   bookmarkletToken: string
+  /** Secret the copied prompt sends to mark a note. Not accepted from a browser Origin. */
+  resolveToken: string
   gateway: Gateway
   auth: Auth
   close(): Promise<void>
@@ -108,6 +110,7 @@ export async function startHarness(o: HarnessOptions): Promise<Harness> {
   const bridge = new PageBridge()
   const review = new ReviewStore(dataDir, o.target?.host ?? '')
   const bookmarkletToken = randomToken(18)
+  const resolveToken = randomToken()
   const shownHost = o.host === '0.0.0.0' || o.host === '::' || o.host === '127.0.0.1' ? 'localhost' : o.host
   const reachHost = o.publicHost || shownHost
   const appUrl = auth.origin(reachHost, o.appPort || o.controlPort)
@@ -152,6 +155,7 @@ export async function startHarness(o: HarnessOptions): Promise<Harness> {
     noAgent,
     bookmarklet,
     bookmarkletToken,
+    resolveToken,
     lang: o.lang,
     embedOrigins: o.embedOrigins,
   })
@@ -167,6 +171,7 @@ export async function startHarness(o: HarnessOptions): Promise<Harness> {
     bookmarklet,
     noAgent,
     bookmarkletToken,
+    resolveToken,
     embedToken,
     gateway,
     auth,

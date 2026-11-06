@@ -182,6 +182,7 @@ describe('bookmarklet server', () => {
     expect(html).not.toContain('Click it on an http page')
     expect(html).not.toContain('PH Review')
     expect(html).toContain(h.bookmarkletToken)
+    expect(html).not.toContain(h.resolveToken)
     expect(html).toContain(packageVersion())
     const homeJs = await (await fetch(`${control}/__ph/home.js`)).text()
     expect(homeJs).toContain("/__ph/overlay.js")

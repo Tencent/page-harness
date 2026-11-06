@@ -240,10 +240,8 @@ export class Auth {
   }
 
   /**
-   * The local review API (`POST /__ph/api/review/resolve`) is the one write a coding agent makes with
-   * plain curl, so it can carry neither the session cookie nor a token. Browsers must not reach it:
-   * every browser POST carries `Origin`, and a page that could call this would mark the user's notes
-   * resolved with no session, no token and no prompt.
+   * Browser half of `POST /__ph/api/review/resolve`. Curl has no Origin and no session cookie.
+   * The per-run `X-PH-Resolve` secret is checked separately; this only keeps pages out.
    */
   checkLocalAgent(req: IncomingMessage): string | null {
     if (req.headers.origin) return 'browsers may not call the local agent API'

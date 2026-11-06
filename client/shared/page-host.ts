@@ -53,6 +53,8 @@ declare global {
       bookmarklet?: boolean
       /** Sent as X-PH-Token. Present only in the bookmarklet. */
       token?: string
+      /** Sent as X-PH-Resolve by the local agent. Only served to loopback, never in the bookmarklet. */
+      resolveToken?: string
       /** Startup `--lang`. When set, the dock stays in this language. */
       lang?: Lang
       /** `--embed-origin`: parent windows allowed to frame the page and receive quoted elements. */

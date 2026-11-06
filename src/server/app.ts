@@ -10,8 +10,8 @@ import { WebSocketServer, type WebSocket } from 'ws'
 import type { AgentRegistry } from '../agents'
 import type { ClientMsg, Lang, ReviewDraft, ReviewItem, ReviewLook, ServerMsg } from '../shared/protocol'
 import { normalizeHost } from '../shared/paths'
-import { REVIEW_PAGE_SIZE, reviewMarkdown, reviewPrompt } from '../shared/review-read'
-import { embedNext, safeEqual } from './auth'
+import { REVIEW_DATA_NOTICE, REVIEW_PAGE_SIZE, reviewMarkdown, reviewPrompt } from '../shared/review-read'
+import { embedNext, isLoopback, safeEqual } from './auth'
 import { HOME_CSS, HOME_JS, homeFontFile, homeHtml, packageVersion } from './homePage'
 import { newId } from '../shared/util'
 import type { ArtifactStore } from './artifacts'
@@ -72,6 +72,8 @@ export interface AppOptions {
   /** Home page and direct overlay injection, no reverse proxy. */
   bookmarklet?: boolean
   bookmarkletToken?: string
+  /** Per-run secret for POST /__ph/api/review/resolve. Never the bookmarklet token. */
+  resolveToken: string
   /** Forces the home page and the injected dock language. */
   lang?: Lang
   /** Origins allowed to frame the app page; the dock posts quoted elements to them. */
@@ -202,7 +204,7 @@ export async function startServers(o: AppOptions): Promise<Servers> {
       if (!existsSync(p)) return send(res, 503, `/* page-harness: ${file} missing, run npm run build */`, 'text/javascript')
       let body = readFileSync(p, 'utf8')
       if (file === 'overlay.js') {
-        body = `window.__PH_CONFIG=${JSON.stringify({ controlOrigin: controlOrigin(req), appPort: o.appPort, target: o.target.host, relay: proxy.site, ...(o.noAgent ? { noAgent: true } : {}), ...(o.lang ? { lang: o.lang } : {}), ...(embedOrigins.length ? { embed: embedOrigins } : {}) })};\n` + body
+        body = `window.__PH_CONFIG=${JSON.stringify({ controlOrigin: controlOrigin(req), appPort: o.appPort, target: o.target.host, relay: proxy.site, ...(isLoopback(req) ? { resolveToken: o.resolveToken } : {}), ...(o.noAgent ? { noAgent: true } : {}), ...(o.lang ? { lang: o.lang } : {}), ...(embedOrigins.length ? { embed: embedOrigins } : {}) })};\n` + body
       }
       return send(res, 200, body, 'text/javascript; charset=utf-8', { 'Cross-Origin-Resource-Policy': 'same-origin' })
     }
@@ -266,7 +268,8 @@ export async function startServers(o: AppOptions): Promise<Servers> {
       const p = url.pathname
       // Preflight for the bookmarklet's cross-origin reads and writes. `/resolve` is excluded on
       // purpose: it is the local agent's endpoint and no page may reach it (see checkLocalAgent).
-      if (req.method === 'OPTIONS' && p !== '/__ph/api/review/resolve' && (p === '/__ph/overlay.js' || p.startsWith('/__ph/api/review'))) {
+      if (req.method === 'OPTIONS' && p === '/__ph/api/review/resolve') return send(res, 403, 'forbidden')
+      if (req.method === 'OPTIONS' && (p === '/__ph/overlay.js' || p.startsWith('/__ph/api/review'))) {
         bookmarkletCors(req, res)
         res.writeHead(204, { 'Cache-Control': 'no-store' })
         return res.end()
@@ -417,7 +420,7 @@ function listen(server: Server, port: number, host: string): Promise<void> {
   })
 }
 
-// ---------- local review API (no session; paging and resolve only) ----------
+// ---------- local review API (paging is a read; resolve needs this run's secret) ----------
 
 /** Cross-origin bookmarklet calls. Reflects Origin only so a public page can reach 127.0.0.1. */
 function bookmarkletCors(req: IncomingMessage, res: ServerResponse) {
@@ -522,7 +525,7 @@ async function serveReviewExtras(o: AppOptions, req: IncomingMessage, res: Serve
   if (m === 'POST' && p === '/__ph/api/review/resolve') {
     const err = o.auth.checkLocalAgent(req)
     if (err) return json(res, { ok: false, error: err }, 403), true
-    await serveReviewResolve(o.gateway, req, res)
+    await serveReviewResolve(o, req, res)
     return true
   }
   if (m === 'GET' && p === '/__ph/api/review/sites') {
@@ -553,6 +556,7 @@ async function serveReviewExtras(o: AppOptions, req: IncomingMessage, res: Serve
       }), true
     }
     const page = siteUrl(host)
+    const owner = o.auth.checkUi(req) === null && o.auth.identify(req)?.access === 'owner'
     const text = reviewPrompt(slice.items, {
       site: page,
       path: '/',
@@ -561,6 +565,7 @@ async function serveReviewExtras(o: AppOptions, req: IncomingMessage, res: Serve
       lang,
       host,
       apiBase: o.auth.origin(hostname(req), o.controlPort),
+      resolveToken: owner ? o.resolveToken : undefined,
     })
     return send(res, 200, text, 'text/plain; charset=utf-8'), true
   }
@@ -586,11 +591,36 @@ function serveReviewPage(gateway: Gateway, res: ServerResponse, url: URL): void 
   const hostRaw = url.searchParams.get('host')
   const host = hostRaw === null ? undefined : hostParam(url)
   if (hostRaw !== null && host === null) return json(res, { ok: false, error: 'host' }, 400)
-  json(res, gateway.listReviewPage({ scope, path: url.searchParams.get('path') ?? '/', page, pageSize, host: hostRaw === null ? undefined : host! }))
+  json(res, { ...gateway.listReviewPage({ scope, path: url.searchParams.get('path') ?? '/', page, pageSize, host: hostRaw === null ? undefined : host! }), notice: REVIEW_DATA_NOTICE })
 }
 
-async function serveReviewResolve(gateway: Gateway, req: IncomingMessage, res: ServerResponse): Promise<void> {
+/** application/json, ignoring parameters such as charset. */
+function jsonMedia(req: IncomingMessage): boolean {
+  const raw = req.headers['content-type']
+  if (typeof raw !== 'string') return false
+  return raw.split(';')[0].trim().toLowerCase() === 'application/json'
+}
+
+/**
+ * The local agent marks a note by sending this run's secret.
+ * Browsers always send Origin, so a page cannot call this even if it sees the secret.
+ * Curl does not send Origin or Sec-Fetch-Site.
+ */
+function allowResolve(o: AppOptions, req: IncomingMessage): boolean {
+  if (!jsonMedia(req) || !o.resolveToken) return false
+  const origin = req.headers.origin
+  if (typeof origin === 'string' && origin.length > 0) return false
+  const site = req.headers['sec-fetch-site']
+  if (typeof site === 'string' && site !== 'none') return false
+  const got = req.headers['x-ph-resolve']
+  if (typeof got !== 'string' || !got) return false
+  return safeEqual(got, o.resolveToken)
+}
+
+async function serveReviewResolve(o: AppOptions, req: IncomingMessage, res: ServerResponse): Promise<void> {
+  if (!allowResolve(o, req)) return json(res, { ok: false, error: 'forbidden' }, 403)
   const body = await readJsonBody<{ n?: unknown; result?: unknown }>(req)
+  const gateway = o.gateway
   const n = typeof body.n === 'number' ? body.n : typeof body.n === 'string' && /^\d+$/.test(body.n) ? Number(body.n) : NaN
   if (!Number.isInteger(n) || n < 1) return json(res, { ok: false, error: 'unknown' }, 404)
   const result = typeof body.result === 'string' ? body.result : ''
