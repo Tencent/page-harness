@@ -836,7 +836,8 @@ export class Gateway {
   }
 
   /**
-   * Marks one note resolved for the local agent named in the copied prompt.
+   * Marks one note resolved for the local agent.
+   * The HTTP route only calls this after the per-run resolve secret checks out.
    * An unknown number returns undefined. Marking an already-resolved note does not add a reply.
    */
   resolveReviewN(n: number, result: string): { ok: true; n: number; status: 'resolved'; already?: true } | undefined {

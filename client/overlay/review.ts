@@ -756,6 +756,7 @@ export function createReview(d: ReviewDeps) {
       controlPort: controlPortOf(),
       host: siteHost(),
       apiBase: window.__PH_CONFIG?.bookmarklet ? window.__PH_CONFIG.controlOrigin : undefined,
+      resolveToken: window.__PH_CONFIG?.resolveToken,
     })
     if (!(await writeClipboard(text))) return d.toast('warn', t.copyFailed)
     copiedAt = Date.now() + 1500

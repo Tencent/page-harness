@@ -126,7 +126,7 @@ function helpInner(lines: readonly (readonly HelpBit[])[]): string {
     .join('')
 }
 
-export function homeHtml(boot: { token: string; version: string; lang?: Lang }): string {
+export function homeHtml(boot: { token: string; resolveToken?: string; version: string; lang?: Lang }): string {
   const json = JSON.stringify(boot).replace(/</g, '\\u003c')
   const t = HOME_COPY[boot.lang ?? 'en']
   const htmlLang = boot.lang ?? 'en'
@@ -315,6 +315,7 @@ function applyCopy() {
 }
 function bookmarklet() {
   const cfgObj = { controlOrigin: location.origin, bookmarklet: true, noAgent: true, token: boot.token }
+  if (boot.resolveToken) cfgObj.resolveToken = boot.resolveToken
   if (boot.lang) cfgObj.lang = boot.lang
   const cfg = JSON.stringify(cfgObj).replace(/</g, '\\\\u003c')
   const srcUrl = JSON.stringify(location.origin + '/__ph/overlay.js').replace(/</g, '\\\\u003c')
